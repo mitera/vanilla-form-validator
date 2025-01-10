@@ -155,7 +155,12 @@
         </form>
     </div>
     <script>
-        //ex. use axios to load json file... localization/messages_it.json
+        //ex. use axios or fetch to load json file... localization/messages_it.json
+        /*
+        fetch('./localization/messages_it.json')
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.log(error));*/
         const json = `{"messages": {
             "required": "Campo obbligatorio",
             "remote": "Controlla questo campo",
