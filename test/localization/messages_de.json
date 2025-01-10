@@ -12,6 +12,6 @@
 		"equalTo": "Bitte denselben Wert wiederholen.",
 		"range": "Geben Sie bitte einen Wert zwischen {0} und {1} ein.",
 		"max": "Geben Sie bitte einen Wert kleiner oder gleich {0} ein.",
-		"min": "Geben Sie bitte einen Wert größer oder gleich {0} ein.",
+		"min": "Geben Sie bitte einen Wert größer oder gleich {0} ein."
 	}
 }
