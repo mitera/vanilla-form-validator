@@ -20,8 +20,8 @@ To see what's new or changed in the latest version, see the [changelog](https://
 
 ### License
 
-vanilla-match-height.js is licensed under [The MIT License (MIT)](http://opensource.org/licenses/MIT)
-<br/>Copyright (c) 2023 Simone Miterangelis
+vanilla-form-validator.js is licensed under [The MIT License (MIT)](http://opensource.org/licenses/MIT)
+<br/>Copyright (c) 2025 Simone Miterangelis
 
 This license is also supplied with the release and source code.
 <br/>As stated in the license, absolutely no warranty is provided.
