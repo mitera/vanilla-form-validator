@@ -423,9 +423,9 @@ class FormValidator {
      * @return {boolean} - Returns true if at least one radio button or checkbox with the specified name is checked, false otherwise.
      */
     validateCheckboxRadio(name) {
-        let radio = Array.from(this.form.querySelectorAll('input[name="' + name + '"]'));
-        for (var i = 0; i < radio.length; i++) {
-            let checked = radio[i].checked;
+        let element = Array.from(this.form.querySelectorAll('input[name="' + name + '"]'));
+        for (var i = 0; i < element.length; i++) {
+            let checked = element[i].checked;
             if (checked) {
                 return true;
             }

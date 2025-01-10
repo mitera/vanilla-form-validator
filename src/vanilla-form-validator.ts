@@ -485,9 +485,9 @@ class FormValidator {
      * @return {boolean} - Returns true if at least one radio button or checkbox with the specified name is checked, false otherwise.
      */
     validateCheckboxRadio(name: string) {
-        let radio = <HTMLInputElement[]>Array.from(this.form.querySelectorAll('input[name="' + name + '"]'));
-        for (var i = 0; i < radio.length; i++) {
-            let checked = radio[i].checked;
+        let element = <HTMLInputElement[]>Array.from(this.form.querySelectorAll('input[name="' + name + '"]'));
+        for (var i = 0; i < element.length; i++) {
+            let checked = element[i].checked;
             if (checked) {
                 return true;
             }
@@ -526,7 +526,6 @@ class FormValidator {
         const emailRegex = /^[\s]{0,2}[\+]{0,1}[\s0-9]{6,20}[\s]{0,2}$/;
         return emailRegex.test(value);
     }
-
 
     /**
      * Validates a URL using a regular expression.
