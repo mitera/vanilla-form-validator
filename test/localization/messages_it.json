@@ -1,0 +1,20 @@
+{
+  "messages": {
+    "required": "Campo obbligatorio",
+    "remote": "Controlla questo campo",
+    "email": "Inserisci un indirizzo email valido",
+    "url": "Inserisci un indirizzo web valido",
+    "date": "Inserisci una data valida",
+    "number": "Inserisci un numero valido",
+    "phone": "Inserisci un telefono valido",
+    "file": "Seleziona un file",
+    "equalTo": "Il valore non corrisponde",
+    "maxlength": "Non inserire pi&ugrave; di {0} caratteri",
+    "minlength": "Inserisci almeno {0} caratteri",
+    "rangelength": "Inserisci un valore compreso tra {0} e {1} caratteri",
+    "range": "Inserisci un valore compreso tra {0} e {1}",
+    "max": "Inserisci un valore minore o uguale a {0}",
+    "min": "Inserisci un valore maggiore o uguale a {0}"
+  }
+}
+

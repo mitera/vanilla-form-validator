@@ -1,0 +1,31 @@
+{
+  "name": "vanilla-form-validator",
+  "version": "0.0.1",
+  "license": "MIT",
+  "author": "Simone Miterangelis <simone@mite.it>",
+  "description": "a vanilla form validator",
+  "main": "dist/vanilla-form-validator.js",
+  "types": "dist/vanilla-form-validator.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mitera/vanilla-form-validator.git"
+  },
+  "keywords": [
+    "form",
+    "validator"
+  ],
+  "bugs": {
+    "url": "https://github.com/mitera/vanilla-form-validator/issues"
+  },
+  "homepage": "https://github.com/mitera/vanilla-form-validator#readme",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

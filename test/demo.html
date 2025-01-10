@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Vanilla Form Validator - main demo</title>
+    <link rel="stylesheet" href="css/screen.css" />
+    <script type="text/javascript" src="../dist/vanilla-form-validator.min.js"></script>
+    <style type="text/css">
+        #commentForm {
+            width: 500px;
+        }
+        #commentForm label {
+            width: 250px;
+        }
+        #commentForm label.error, #commentForm input.submit {
+            margin-left: 253px;
+        }
+        #signupForm {
+            width: 670px;
+        }
+        #signupForm label.error {
+            margin-left: 10px;
+            width: auto;
+            display: inline;
+        }
+        #newsletter_topics label.error {
+            margin-left: 103px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="banner">
+        Vanilla Form Validator Demo
+    </h1>
+    <div id="main">
+        <p>Default submitHandler is set to display an alert into of submitting the form</p>
+        <form class="cmxform" id="commentForm" method="get" action="">
+            <fieldset>
+                <legend>Please provide your name, email address (won't be published) and a comment</legend>
+                <p>
+                    <label for="cname">Name (required, at least 2 characters)</label>
+                    <input id="cname" name="name" minlength="2" type="text" required />
+                <p>
+                    <label for="cemail">E-Mail (required)</label>
+                    <input id="cemail" type="email" name="email" required />
+                </p>
+                <p>
+                    <label for="curl">URL (optional)</label>
+                    <input id="curl" type="url" name="url" />
+                </p>
+                <p>
+                    <label for="ccomment">Your comment (required)</label>
+                    <textarea id="ccomment" name="comment" required></textarea>
+                </p>
+                <p>
+                    <label for="cignore">Ignore hidden</label>
+                    <input id="cignore" name="cignore" type="hidden" required />
+                </p>
+                <p>
+                    <input class="submit" type="submit" value="Submit"/>
+                </p>
+            </fieldset>
+        </form>
+        <form class="cmxform" id="signupForm" method="get" action="">
+            <fieldset>
+                <legend>Validating a complete form</legend>
+                <p>
+                    <label for="firstname">Firstname</label>
+                    <input id="firstname" name="firstname" type="text" required/>
+                </p>
+                <p>
+                    <label for="lastname">Lastname</label>
+                    <input id="lastname" name="lastname" type="text" required/>
+                </p>
+                <p>
+                    <label for="username">Username</label>
+                    <input id="username" name="username" type="text" minlength="2" required/>
+                </p>
+                <p>
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" minlength="5" required/>
+                </p>
+                <p>
+                    <label for="confirm_password">Confirm password</label>
+                    <input id="confirm_password" name="confirm_password" type="password"  minlength="5" required/>
+                </p>
+                <p>
+                    <label for="age">age</label>
+                    <input id="age" name="age" type="number" min="18" required/>
+                </p>
+                <p>
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" required/>
+                </p>
+                <p>
+                    <label for="date">Date</label>
+                    <input type="date" min="2025-01-01" name="date" id="date" value="" required>
+                </p>
+                <p>
+                    <label for="file">Photo</label>
+                    <input type="file" name="file" id="file" value="" required>
+                </p>
+                <p>
+                    <label for="agree">Please agree to our policy</label>
+                    <input type="checkbox" class="checkbox" id="agree" name="agree" required/>
+                </p>
+                <p>
+                    <label for="newsletter">I'd like to receive the newsletter</label>
+                    <input type="checkbox" class="checkbox" id="newsletter" name="newsletter" />
+                </p>
+                <fieldset id="newsletter_topics" disabled>
+                    <legend>Topics (select at least two) - note: would be hidden when newsletter isn't selected, but is visible here for the demo</legend>
+                    <label for="topic_marketflash">
+                        <input type="checkbox" id="topic_marketflash" value="marketflash" name="topic" />
+                        Marketflash </label>
+                    <label for="topic_fuzz">
+                        <input type="checkbox" id="topic_fuzz" value="fuzz" name="topic" />
+                        Latest fuzz </label>
+                    <label for="topic_digester">
+                        <input type="checkbox" id="topic_digester" value="digester" name="topic" />
+                        Mailing list digester </label>
+                    <label id="topic-error" class="error" style="display: none;"></label>
+                </fieldset>
+                <p>
+                    <input class="submit" type="submit" value="Submit"/>
+                </p>
+            </fieldset>
+        </form>
+    </div>
+    <script>
+        //ex. use axios to load json file... localization/messages_it.json
+        const json = `{"messages": {
+            "required": "Campo obbligatorio",
+            "remote": "Controlla questo campo",
+            "email": "Inserisci un indirizzo email valido",
+            "url": "Inserisci un indirizzo web valido",
+            "date": "Inserisci una data valida",
+            "number": "Inserisci un numero valido",
+            "phone": "Inserisci un telefono valido",
+            "file": "Seleziona un file",
+            "equalTo": "Il valore non corrisponde",
+            "maxlength": "Non inserire pi&ugrave; di {0} caratteri",
+            "minlength": "Inserisci almeno {0} caratteri",
+            "rangelength": "Inserisci un valore compreso tra {0} e {1} caratteri",
+            "range": "Inserisci un valore compreso tra {0} e {1}",
+            "max": "Inserisci un valore minore o uguale a {0}",
+            "min": "Inserisci un valore maggiore o uguale a {0}"
+        }}`;
+        let obj = JSON.parse(json);
+
+        let commentForm = new FormValidator("#commentForm", {
+            errorElement: 'label',
+            ignore: 'input[type="hidden"]',
+            //messages: obj.messages, //custom json message
+        });
+
+        // validate signup form on keyup and submit
+        let messages = {
+            required: 'Required field'
+        }
+        let signupForm = new FormValidator("#signupForm", {
+            errorElement: 'label',
+            messages: messages,
+            rules: [
+                {
+                    fieldName: 'username',
+                    errorMessage: 'Username already in use',
+                    validation: {
+                        method: 'custom',
+                        action: function () {
+                            console.log('remote validation');
+                            return true;
+                        },
+                    }
+                },
+                {
+                    fieldName: 'confirm_password',
+                    validation: {
+                        method: 'equalTo',
+                        field: '#password'
+                    }
+                },
+                {
+                    fieldName: 'newsletter',
+                    validation: {
+                        method: 'custom',
+                        action: function () {
+                            let newsletter = document.querySelector('[name="newsletter"]');
+                            let newsletter_topics = document.getElementById('newsletter_topics');
+                            if (newsletter.checked) {
+                                newsletter_topics.removeAttribute('disabled')
+                            } else {
+                                newsletter_topics.setAttribute('disabled', '')
+                            }
+                            return true;
+                        }
+                    }
+                },
+                {
+                    fieldName: 'topic',
+                    errorMessage: 'Please select at least two topics you\'d like to receive.',
+                    validation: {
+                        method: 'custom',
+                        action: function () {
+                            let newsletter = document.querySelector('[name="newsletter"]');
+                            if (newsletter.checked) {
+                                let size = 0
+                                let allCheckBox = document.querySelectorAll('[name="topic"]')
+                                allCheckBox.forEach((checkbox) => {
+                                    if (checkbox.checked) {
+                                        size++;
+                                    }
+                                })
+                                return size >= 2;
+                            }
+                            return true;
+                        }
+                    }
+                }
+            ],
+            submitHandler: function () {
+                console.log('remote action')
+            }
+        });
+    </script>
+</body>
+</html>
