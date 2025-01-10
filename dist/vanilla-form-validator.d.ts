@@ -2,6 +2,8 @@ interface FormRuleValidation {
     method?: string | null;
     field?: string | null;
     action?: any | null;
+    min?: number | null;
+    max?: number | null;
 }
 interface FormRule {
     fieldName?: string | null;

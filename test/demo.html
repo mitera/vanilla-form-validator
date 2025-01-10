@@ -121,6 +121,33 @@
                         Mailing list digester </label>
                     <label id="topic-error" class="error" style="display: none;"></label>
                 </fieldset>
+                <fieldset id="newsletter_topics2">
+                    <legend>Topics (test rule)</legend>
+                    <label for="topic_marketflash">
+                        <input type="checkbox" id="topic_marketflash2" value="topic1" name="topic2" />
+                        topic1 </label>
+                    <label for="topic_fuzz">
+                        <input type="checkbox" id="topic_fuzz2" value="topic2" name="topic2" />
+                        topic2 </label>
+                    <label for="topic_digester">
+                        <input type="checkbox" id="topic_digester2" value="topic3" name="topic2" />
+                        topic3 </label>
+                    <label id="topic2-error" class="error" style="display: none;"></label>
+                </fieldset>
+                <fieldset id="newsletter3">
+                    <p>
+                        <label for="minselect">Multiple select</label>
+                        <select multiple name="minselect" id="minselect" style="width: 50%">
+                            <option>option 1</option>
+                            <option>option 2</option>
+                            <option>option 3</option>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="maxfiles">Photos</label>
+                        <input type="file" name="maxfiles" id="maxfiles" value="" multiple>
+                    </p>
+                </fieldset>
                 <p>
                     <input class="submit" type="submit" value="Submit"/>
                 </p>
@@ -215,6 +242,31 @@
                             }
                             return true;
                         }
+                    }
+                },
+                {
+                    fieldName: 'topic2',
+                    errorMessage: 'Please select 1 or 2 topics',
+                    validation: {
+                        method: 'rangelength',
+                        min: 1,
+                        max: 2
+                    }
+                },
+                {
+                    fieldName: 'minselect',
+                    errorMessage: 'Please select 2 elements.',
+                    validation: {
+                        method: 'minlength',
+                        min: 2
+                    }
+                },
+                {
+                    fieldName: 'maxfiles',
+                    errorMessage: 'Please select max 2 elements.',
+                    validation: {
+                        method: 'maxlength',
+                        max: 2
                     }
                 }
             ],

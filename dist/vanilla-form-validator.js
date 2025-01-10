@@ -201,6 +201,8 @@ class FormValidator {
             if (isValid && this.settings && this.settings.rules) {
                 this.settings.rules.forEach(rule => {
                     if (rule.fieldName == fieldName && rule.validation) {
+                        let min = rule.validation.min;
+                        let max = rule.validation.max;
                         switch (rule.validation.method) {
                             case 'equalTo':
                                 if (rule.validation.field) {
@@ -210,6 +212,50 @@ class FormValidator {
                                         if (!isValid && !customErrorMessage) {
                                             errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.equalTo;
                                         }
+                                    }
+                                }
+                                break;
+                            case 'minlength':
+                                if (min) {
+                                    isValid = this.minlength(fieldValue, field, min);
+                                    if (!isValid && !customErrorMessage) {
+                                        if (field.getAttribute('min')) {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.min;
+                                        }
+                                        else {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.minlength;
+                                        }
+                                        errorMessage = errorMessage.replace('{0}', min.toString());
+                                    }
+                                }
+                                break;
+                            case 'maxlength':
+                                if (max) {
+                                    isValid = this.maxlength(fieldValue, field, max);
+                                    if (!isValid && !customErrorMessage) {
+                                        if (field.getAttribute('max')) {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.max;
+                                        }
+                                        else {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.maxlength;
+                                        }
+                                        errorMessage = errorMessage.replace('{0}', max.toString());
+                                    }
+                                }
+                                break;
+                            case 'rangelength':
+                                if (min && max) {
+                                    isValid = this.rangelength(fieldValue, field, [min, max]);
+                                    if (!isValid && !customErrorMessage) {
+                                        if (field.getAttribute('max') && field.getAttribute('min')) {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.range;
+                                        }
+                                        else {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.rangelength;
+                                        }
+                                        errorMessage = errorMessage
+                                            .replace('{0}', min.toString())
+                                            .replace('{1}', max.toString());
                                     }
                                 }
                                 break;
@@ -292,14 +338,22 @@ class FormValidator {
     getLength(value, element) {
         switch (element.nodeName.toLowerCase()) {
             case "select":
-                return Array.from(element.querySelectorAll('option[selected]')).length;
+                return Array.from(element.querySelectorAll('option')).filter(element => element.selected).length;
             case "input":
                 if (this.checkable(element)) {
-                    return this.findByName(element.name).filter(element => element.hasAttribute('checked')).length;
+                    return this.findByName(element.name).filter(element => element.checked).length;
                 }
                 else {
-                    if (element.type == 'number') {
-                        return parseInt(value);
+                    switch (element.type) {
+                        case "number":
+                            return parseInt(value);
+                        case "file":
+                            if (element.files) {
+                                return element.files.length;
+                            }
+                            else {
+                                return 0;
+                            }
                     }
                 }
         }
