@@ -174,8 +174,6 @@ class FormValidator {
                 case 'radio':
                     isValid = this.validateCheckboxRadio(fieldName);
                     break;
-                case 'submit':
-                    break;
                 default:
                     isValid = this.validateText(fieldValue);
             }
