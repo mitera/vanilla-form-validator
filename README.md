@@ -133,6 +133,20 @@ Override solution:
    
     On package are present a precufigured set of json files
 
+### Customize the position of error message
+
+By default, the error message will be created after the field;
+if you want to put the error message in another location, 
+simply create an html tag with id the field name and add the `-error`
+suffix and hide `style="display: none;"`
+
+  ```
+  <p>
+      <label for="cemail">E-Mail (required)</label>
+      <input id="cemail" type="email" name="email" required />
+  </p>
+  <label id="cemail-error" class="error" style="display: none;"></label>
+  ```
 
 ### Customize the submission form
 
