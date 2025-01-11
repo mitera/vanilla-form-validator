@@ -233,7 +233,7 @@ Example of custom validation:
 
 ### Changelog
 
-To see what's new or changed in the latest version, see the [changelog](https://github.com/mitera/validator/blob/master/CHANGELOG.md)
+To see what's new or changed in the latest version, see the [changelog](https://github.com/mitera/valilla-form-validator/blob/master/CHANGELOG.md)
 
 ### License
 
