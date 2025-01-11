@@ -88,7 +88,7 @@ Where:
 
 ### Error messages
 
-preconfigured values
+Preconfigured values are:
 
     private messages: FormMessages = {
         required: 'This field is required.',
@@ -109,9 +109,9 @@ preconfigured values
     }
 
 Override solution:
-1) one by one
+1) one by one, below an example:
 
-
+   ```
     let messages = {
         required: 'Required field' //override default message
     }
@@ -119,17 +119,20 @@ Override solution:
         errorElement: 'label',
         messages: messages,
     });
-
+   ```
+   
 2) loading a json file `commentForm.loadMessages('localization/messages_es.json');`
 
-
+    ```
     let commentForm = new FormValidator("#commentForm", {
         errorElement: 'label',
         ignore: 'input[type="hidden"]'
     });
     commentForm.loadMessages('localization/messages_es.json');
+   ```
+   
+    On package are present a precufigured set of json files
 
-There is already a custom set of json files
 
 ### Customize the submission form
 
@@ -143,7 +146,7 @@ Create a function on `submitHandler` property
 
 ### Custom validations
 
-is ad array of rules:
+is an array of rules:
 
     let signupForm = new FormValidator("#signupForm", {
         rules: [
@@ -161,8 +164,11 @@ rules configuration:
   - `max` is max integer value used by `maxlength, rangelength`
   - `action` is a custom method for validate field must be return a boolean value
 
-preconfigured validation: `equalTo, minlength, maxlength, rangelength`
+Preconfigured validation are: `equalTo, minlength, maxlength, rangelength`
+
 These rules: `minlength, maxlength, rangelength` are applicable on input `text,radio,checkbox,file` and select field
+
+Example of preconfigured validation:
 
     {
         fieldName: 'confirm_password',
@@ -197,7 +203,7 @@ These rules: `minlength, maxlength, rangelength` are applicable on input `text,r
         }
     }
 
-custom validation:
+Example of custom validation:
 
     {
         fieldName: 'username',
