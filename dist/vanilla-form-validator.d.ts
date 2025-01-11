@@ -65,9 +65,9 @@ declare class FormValidator {
     /**
      * Merge two objects
      *
-     * @param {Settings} o1 Object 1
-     * @param {Settings} o2 Object 2
-     * @return {Settings}
+     * @param {FormMessages} o1 Object 1
+     * @param {FormMessages} o2 Object 2
+     * @return {FormMessages}
      */
     merge(o1: any, o2: any): any;
     /**
