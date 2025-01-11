@@ -91,6 +91,24 @@ class FormValidator {
     }
 
     /**
+     * Load and merge messages from a JSON file into the settings.
+     *
+     * @param {string} jsonFile - The path of the JSON file containing the messages.
+     *
+     * @return {void}
+     */
+    loadMessages(jsonFile: string) {
+        fetch(jsonFile)
+            .then(response => response.json())
+            .then(data => {
+                if (this.settings && data.messages) {
+                    this.messages = data.messages;
+                }
+            })
+            .catch(error => console.log(error));
+    }
+
+    /**
      * Initialize the form validation by setting up event listeners on form fields for blur, keyup, change events.
      * Also adds a listener for form reset event.
      *
