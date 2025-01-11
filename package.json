@@ -1,6 +1,6 @@
 {
   "name": "vanilla-form-validator",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "author": "Simone Miterangelis <simone@mite.it>",
   "description": "a vanilla form validator",
