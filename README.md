@@ -10,7 +10,7 @@
 
 ## *Inspired by:* jquery-validation
 
-> *validator:* form validator
+> *Form Validator:* provides validation for your existing forms, while making all kinds of customizations to fit your application really easy.
 
 [Demo](#demo) - [Features](#features) - [Install](#install) - [Usage](#usage) - [Options](#options) - [Changelog](#changelog) - [License](#license)
 
