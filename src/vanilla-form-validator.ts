@@ -122,7 +122,7 @@ class FormValidator {
 
         this.checkSubmit();
 
-        this.fields = Array.from(this.form.querySelectorAll('input, textarea, select'));
+        this.fields = Array.from(this.form.querySelectorAll('input[name], textarea, select'));
         if (this.settings && this.settings.ignore) {
             let ignoreFields = Array.from(this.form.querySelectorAll(this.settings.ignore));
             this.fields = this.fields.filter(element => !ignoreFields.includes(element));
