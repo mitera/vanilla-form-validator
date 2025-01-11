@@ -35,7 +35,8 @@ interface FormSettings {
     rules?: FormRule[] | null;
     errorElement?: string | null;
     errorClass?: string | null;
-    validClass?: string | null;
+    errorFieldClass?: string | null;
+    validFormClass?: string | null;
     submitHandler?: any | null;
     messages: FormMessages;
 }
@@ -77,7 +78,8 @@ class FormValidator {
                 rules: null,
                 errorElement: 'p',
                 errorClass: 'error',
-                validClass: 'was-validated',
+                errorFieldClass: null,
+                validFormClass: 'was-validated',
                 submitHandler: null,
                 messages: this.messages
             }
@@ -356,13 +358,17 @@ class FormValidator {
                 if (errorHelp) {
                     errorHelp.style.setProperty('display', 'none');
                 }
-                field.classList.remove("is-invalid");
+                if (this.settings && this.settings.errorFieldClass) {
+                    field.classList.remove(this.settings.errorFieldClass);
+                }
             } else {
                 errorHelp.innerText = errorMessage;
                 if (errorHelp) {
                     errorHelp.style.setProperty('display', '');
                 }
-                field.classList.add("is-invalid");
+                if (this.settings && this.settings.errorFieldClass) {
+                    field.classList.add(this.settings.errorFieldClass);
+                }
             }
         }
 
@@ -631,8 +637,8 @@ class FormValidator {
      */
     submitAction($this: any) {
         if ($this.form) {
-            if (this.settings && this.settings.validClass) {
-                $this.form.classList.add(this.settings.validClass)
+            if (this.settings && this.settings.validFormClass) {
+                $this.form.classList.add(this.settings.validFormClass)
             }
             if ($this.validateForm()) {
                 if (this.settings && this.settings.submitHandler) {
@@ -653,8 +659,8 @@ class FormValidator {
      */
     resetForm() {
         if (this.form) {
-            if (this.settings && this.settings.validClass) {
-                this.form.classList.remove(this.settings.validClass);
+            if (this.settings && this.settings.validFormClass) {
+                this.form.classList.remove(this.settings.validFormClass);
             }
             this.form.reset();
         }

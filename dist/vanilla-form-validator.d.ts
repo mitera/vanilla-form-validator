@@ -32,7 +32,8 @@ interface FormSettings {
     rules?: FormRule[] | null;
     errorElement?: string | null;
     errorClass?: string | null;
-    validClass?: string | null;
+    errorFieldClass?: string | null;
+    validFormClass?: string | null;
     submitHandler?: any | null;
     messages: FormMessages;
 }

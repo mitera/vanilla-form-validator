@@ -30,7 +30,8 @@ class FormValidator {
                 rules: null,
                 errorElement: 'p',
                 errorClass: 'error',
-                validClass: 'was-validated',
+                errorFieldClass: null,
+                validFormClass: 'was-validated',
                 submitHandler: null,
                 messages: this.messages
             };
@@ -300,14 +301,18 @@ class FormValidator {
                 if (errorHelp) {
                     errorHelp.style.setProperty('display', 'none');
                 }
-                field.classList.remove("is-invalid");
+                if (this.settings && this.settings.errorFieldClass) {
+                    field.classList.remove(this.settings.errorFieldClass);
+                }
             }
             else {
                 errorHelp.innerText = errorMessage;
                 if (errorHelp) {
                     errorHelp.style.setProperty('display', '');
                 }
-                field.classList.add("is-invalid");
+                if (this.settings && this.settings.errorFieldClass) {
+                    field.classList.add(this.settings.errorFieldClass);
+                }
             }
         }
         return isValid;
@@ -559,8 +564,8 @@ class FormValidator {
      */
     submitAction($this) {
         if ($this.form) {
-            if (this.settings && this.settings.validClass) {
-                $this.form.classList.add(this.settings.validClass);
+            if (this.settings && this.settings.validFormClass) {
+                $this.form.classList.add(this.settings.validFormClass);
             }
             if ($this.validateForm()) {
                 if (this.settings && this.settings.submitHandler) {
@@ -582,8 +587,8 @@ class FormValidator {
      */
     resetForm() {
         if (this.form) {
-            if (this.settings && this.settings.validClass) {
-                this.form.classList.remove(this.settings.validClass);
+            if (this.settings && this.settings.validFormClass) {
+                this.form.classList.remove(this.settings.validFormClass);
             }
             this.form.reset();
         }

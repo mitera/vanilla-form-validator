@@ -71,7 +71,8 @@ The default `options` are:
         rules: null,
         errorElement: 'p',
         errorClass: 'error',
-        validClass: 'was-validated',
+        errorFieldClass: null,
+        validFormClass: 'was-validated',
         submitHandler: null,
         messages: this.messages
     }
@@ -82,7 +83,8 @@ Where:
 - `rules` is an array of custom fields validation [Custom validations](#Custom-validations)
 - `errorElement` is an html tag to display error message
 - `errorClass` is a css class for display error message
-- `validClass` is a css class added to a form when form is valid
+- `errorFieldClass` is a css class added when a field is not valid
+- `validFormClass` is a css class added to a form when form is valid
 - `submitHandler` is an method to customize the submission form [Customize the submission form](#Customize-the-submission-form)
 - `messages` preconfigured error messages [Error messages](#Error-messages)
 
