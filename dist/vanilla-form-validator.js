@@ -288,13 +288,14 @@ class FormValidator {
                 });
             }
         }
-        let errorHelp = document.querySelector('#' + fieldId + '-error');
+        let errorHelpId = (fieldId ? fieldId : fieldName) + '-error';
+        let errorHelp = document.querySelector('#' + errorHelpId);
         if (!errorHelp && this.settings) {
             const errorHelpItem = document.createElement(this.settings.errorElement ? this.settings.errorElement : 'p');
             errorHelpItem.className = this.settings.errorClass ? this.settings.errorClass : 'error';
-            errorHelpItem.id = (fieldId ? fieldId : fieldName) + '-error';
+            errorHelpItem.id = errorHelpId;
             field.insertAdjacentElement('afterend', errorHelpItem);
-            errorHelp = document.querySelector('#' + fieldId + '-error');
+            errorHelp = document.querySelector('#' + errorHelpId);
         }
         if (errorHelp) {
             if (isValid) {

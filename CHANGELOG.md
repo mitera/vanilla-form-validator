@@ -1,3 +1,10 @@
+<a name="1.0.2"></a>
+# 1.0.2 (2025-01-12)
+
+### release summary
+
+- Generate new dist files
+
 <a name="1.0.1"></a>
 # 1.0.1 (2025-01-12)
 
