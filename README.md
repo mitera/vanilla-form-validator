@@ -133,14 +133,23 @@ Override solution:
     commentForm.loadMessages('localization/messages_es.json');
    ```
    
-    On package are present a precufigured set of json files
+    On package are present a preconfigured set of json files
+
+3) Set on field the attribute `data-error-message`
+
+    ```
+    <p>
+        <label for="ccomment">Your comment (required)</label>
+        <textarea id="ccomment" name="comment" required data-error-message="Custom error message"></textarea>
+    </p>
+   ```
 
 ### Customize the position of error message
 
 By default, the error message will be created after the field;
 if you want to put the error message in another location, 
-simply create an html tag with id the field name and add the `-error`
-suffix and hide `style="display: none;"`
+simply create a html tag with id the field id or name if input type is `radio` or `checkbox`, append the `-error`
+suffix (ex: `id="cemail-error"`) and hide `style="display: none;"`
 
   ```
   <p>
