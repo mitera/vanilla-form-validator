@@ -175,6 +175,7 @@ class FormValidator {
         let fieldId = field.id;
         const fieldName = field.name;
         const fieldType = field.type;
+        const pattern = field.pattern;
         switch (fieldType) {
             case 'checkbox':
             case 'radio':
@@ -273,6 +274,12 @@ class FormValidator {
                                     .replace('{1}', maxlength);
                         }
                     }
+            }
+            if (isValid && fieldValue && fieldValue !== '' && pattern !== '') {
+                isValid = this.validateRegExp(pattern, fieldValue);
+                if (!isValid && !customErrorMessage) {
+                    errorMessage = this.messages.date;
+                }
             }
             if (isValid && this.settings && this.settings.rules) {
                 this.settings.rules.forEach(rule => {
@@ -526,6 +533,19 @@ class FormValidator {
      */
     validateText(value: string) {
         return value.length > 0;
+    }
+
+    /**
+     * Validate the given regular expression against the specified value.
+     *
+     * @param {string} regExp - The regular expression to validate against.
+     * @param {string} value - The value to validate.
+     *
+     * @returns {boolean} - True if the value matches the regular expression, false otherwise.
+     */
+    validateRegExp(regExp: string, value: string) {
+        let customRegExp = new RegExp(regExp);
+        return customRegExp.test(value);
     }
 
     /**

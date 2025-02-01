@@ -1,3 +1,10 @@
+<a name="1.0.3"></a>
+# 1.0.3 (2025-01-31)
+
+### release summary
+
+- Add regex validation for form fields with patterns
+
 <a name="1.0.2"></a>
 # 1.0.2 (2025-01-12)
 

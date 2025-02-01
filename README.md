@@ -171,7 +171,9 @@ Create a function on `submitHandler` property
 
 ### Custom validations
 
-is an array of rules:
+on input `text` it's possible to use `pattern` attribute
+
+for other fields or cases add an array of rules:
 
     let signupForm = new FormValidator("#signupForm", {
         rules: [

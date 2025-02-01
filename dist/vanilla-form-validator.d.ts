@@ -166,6 +166,15 @@ declare class FormValidator {
      */
     validateText(value: string): boolean;
     /**
+     * Validate the given regular expression against the specified value.
+     *
+     * @param {string} regExp - The regular expression to validate against.
+     * @param {string} value - The value to validate.
+     *
+     * @returns {boolean} - True if the value matches the regular expression, false otherwise.
+     */
+    validateRegExp(regExp: string, value: string): boolean;
+    /**
      * Validates email address.
      *
      * @param {string} value - The email address to be validated.
