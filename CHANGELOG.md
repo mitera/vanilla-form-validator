@@ -1,3 +1,10 @@
+<a name="1.0.4"></a>
+# 1.0.4 (2025-03-09)
+
+### release summary
+
+- Remove error field class from all elements on selection
+
 <a name="1.0.3"></a>
 # 1.0.3 (2025-01-31)
 

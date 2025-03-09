@@ -455,6 +455,11 @@ class FormValidator {
         for (var i = 0; i < element.length; i++) {
             let checked = element[i].checked;
             if (checked) {
+                element.forEach((item) => {
+                    if (this.settings && this.settings.errorFieldClass) {
+                        item.classList.remove(this.settings.errorFieldClass);
+                    }
+                });
                 return true;
             }
         }
