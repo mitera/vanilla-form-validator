@@ -28,6 +28,7 @@ interface FormMessages {
     max: string;
     min: string;
     range: string;
+    regExp: string;
 }
 
 interface FormSettings {
@@ -61,7 +62,8 @@ class FormValidator {
         rangelength: 'Please enter a value between {0} and {1} characters long',
         max: 'Please enter a value than {0}.',
         min: 'Please enter a value at least {0}.',
-        range: 'Please enter a value between {0} and {1}'
+        range: 'Please enter a value between {0} and {1}',
+        regExp: 'Please enter a value matching the requested format.'
     }
 
     /**
@@ -278,7 +280,7 @@ class FormValidator {
             if (isValid && fieldValue && fieldValue !== '' && pattern !== '') {
                 isValid = this.validateRegExp(pattern, fieldValue);
                 if (!isValid && !customErrorMessage) {
-                    errorMessage = this.messages.date;
+                    errorMessage = this.messages.regExp;
                 }
             }
             if (isValid && this.settings && this.settings.rules) {
@@ -650,7 +652,7 @@ class FormValidator {
         if (this.form) {
             this.form.addEventListener('submit', (event) => {
                 event.preventDefault();
-                this.submitAction(this);
+                this.submitAction();
             });
         }
     }
@@ -661,19 +663,22 @@ class FormValidator {
      * @param {object} $this - The reference to the current object.
      * @return {void}
      */
-    submitAction($this: any) {
-        if ($this.form) {
+    submitAction() {
+        if (this.form) {
             if (this.settings && this.settings.validFormClass) {
-                $this.form.classList.add(this.settings.validFormClass)
+                this.form.classList.add(this.settings.validFormClass)
             }
-            if ($this.validateForm()) {
+            if (this.validateForm()) {
                 if (this.settings && this.settings.submitHandler) {
                     this.settings.submitHandler();
                 } else {
-                    $this.form.submit();
+                    this.form.submit();
                 }
             } else {
                 console.log('Invalid form, please check the errors.');
+                if (this.settings && this.settings.validFormClass) {
+                    this.form.classList.remove(this.settings.validFormClass);
+                }
             }
         }
     }

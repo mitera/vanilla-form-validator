@@ -26,6 +26,7 @@ interface FormMessages {
     max: string;
     min: string;
     range: string;
+    regExp: string;
 }
 interface FormSettings {
     ignore?: string | null;
@@ -228,7 +229,7 @@ declare class FormValidator {
      * @param {object} $this - The reference to the current object.
      * @return {void}
      */
-    submitAction($this: any): void;
+    submitAction(): void;
     /**
      * Resets the form by removing the "was-validated" class and resetting the form fields.
      *

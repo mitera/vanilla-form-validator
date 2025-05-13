@@ -1,3 +1,9 @@
+<a name="1.0.5"></a>
+# 1.0.5 (2025-05-13)
+
+### release summary
+- Add RegExp validation support and refactor submit handling
+
 <a name="1.0.4"></a>
 # 1.0.4 (2025-03-09)
 
