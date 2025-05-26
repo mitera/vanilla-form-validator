@@ -22,10 +22,11 @@
     "test": "test"
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && esbuild dist/vanilla-form-validator.js --minify --outfile=dist/vanilla-form-validator.min.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
-    "typescript": "^5.3.3"
+    "esbuild": "^0.25.4",
+    "typescript": "^5.8.3"
   }
 }
