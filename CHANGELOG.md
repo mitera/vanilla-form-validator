@@ -1,3 +1,9 @@
+<a name="1.0.6"></a>
+# 1.0.6 (2025-05-31)
+
+### release summary
+- "Refactor and modularize form validator setup, add TypeScript support"
+
 <a name="1.0.5"></a>
 # 1.0.5 (2025-05-13)
 

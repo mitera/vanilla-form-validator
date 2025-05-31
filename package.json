@@ -1,6 +1,6 @@
 {
   "name": "vanilla-form-validator",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "MIT",
   "author": "Simone Miterangelis <simone@mite.it>",
   "description": "a vanilla form validator",
@@ -12,7 +12,8 @@
   },
   "keywords": [
     "form",
-    "validator"
+    "validator",
+    "vanilla"
   ],
   "bugs": {
     "url": "https://github.com/mitera/vanilla-form-validator/issues"
@@ -22,11 +23,15 @@
     "test": "test"
   },
   "scripts": {
-    "build": "tsc --build && esbuild dist/vanilla-form-validator.js --minify --outfile=dist/vanilla-form-validator.min.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "rollup --config --watch",
+    "build": "rollup --config && terser dist/vanilla-form-validator.js -o dist/vanilla-form-validator.min.js"
   },
   "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.5",
     "esbuild": "^0.25.4",
+    "rollup": "^4.41.1",
+    "terser": "^5.39.2",
+    "tslib": "^2.8.1",
     "typescript": "^5.8.3"
   }
 }
