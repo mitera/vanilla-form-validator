@@ -39,7 +39,7 @@ interface FormSettings {
     errorFieldClass?: string | null;
     validFormClass?: string | null;
     submitHandler?: any | null;
-    messages: FormMessages;
+    messages?: FormMessages;
 }
 
 export {

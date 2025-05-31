@@ -1,3 +1,9 @@
+<a name="1.0.7"></a>
+# 1.0.7 (2025-05-31)
+
+### release summary
+- Make `messages` optional in `FormSettings`
+
 <a name="1.0.6"></a>
 # 1.0.6 (2025-05-31)
 
