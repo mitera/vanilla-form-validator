@@ -1,13 +1,13 @@
 /*!
  * @author Simone Miterangelis <simone@mite.it>
- * vanilla-form-validator v1.0.6 by @mitera
+ * vanilla-form-validator v1.0.7 by @mitera
  * https://github.com/mitera/vanilla-form-validator
  * Released under the MIT License.
  */
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
-	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.MatchHeight = factory());
+	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.FormValidator = factory());
 })(this, (function () { 'use strict';
 
 	class FormValidator {

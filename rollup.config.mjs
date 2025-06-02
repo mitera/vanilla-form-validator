@@ -3,7 +3,7 @@ import rollupTypescript from '@rollup/plugin-typescript';
 
 const license = `/*!
  * @author Simone Miterangelis <simone@mite.it>
- * vanilla-form-validator v1.0.7 by @mitera
+ * vanilla-form-validator v1.0.8s by @mitera
  * https://github.com/mitera/vanilla-form-validator
  * Released under the MIT License.
  */`;
@@ -14,7 +14,7 @@ export default {
         {
             dir: 'dist',
             format: 'umd',
-            name: 'MatchHeight',
+            name: 'FormValidator',
             //file: pkg.main,
             banner: license,
             indent: '\t',
