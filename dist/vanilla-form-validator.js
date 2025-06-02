@@ -1,6 +1,6 @@
 /*!
  * @author Simone Miterangelis <simone@mite.it>
- * vanilla-form-validator v1.0.7 by @mitera
+ * vanilla-form-validator v1.0.8s by @mitera
  * https://github.com/mitera/vanilla-form-validator
  * Released under the MIT License.
  */
