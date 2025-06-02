@@ -1,5 +1,5 @@
 <a name="1.0.8"></a>
-# 1.0.8 (2025-05-31)
+# 1.0.8 (2025-06-02)
 
 ### release summary
 - Update `FormValidator` global name
