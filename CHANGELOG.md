@@ -1,3 +1,9 @@
+<a name="1.1.1"></a>
+# 1.1.0 (2025-06-02)
+
+### release summary
+- Refactor `FormValidator` to support `HTMLFormElement` as a constructor parameter, improve null safety
+
 <a name="1.1.0"></a>
 # 1.1.0 (2025-06-02)
 

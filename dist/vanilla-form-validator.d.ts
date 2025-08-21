@@ -1,15 +1,17 @@
 import { FormSettings } from "./types";
 export default class FormValidator {
-    private form;
+    private form?;
     private fields?;
     private settings?;
     private messages;
     /**
-     * Constructor for the FormHandler class.
-     * @param {string} id - The ID of the HTML form element.
-     * @return {void}
+     * Creates an instance of the form handler with the specified settings and binds it to a form element.
+     *
+     * @param {HTMLFormElement | string} selector - The form element or the string selector used to identify the form in the DOM.
+     * @param {FormSettings} [settings] - Optional configuration settings for initializing the form handler, including validation rules and error handling options.
+     * @return {void} Initializes the form handler with the provided form element and settings and prepares it for use.
      */
-    constructor(selector: string, settings?: FormSettings);
+    constructor(selector: HTMLFormElement | string, settings?: FormSettings);
     /**
      * Load and merge messages from a JSON file into the settings.
      *
@@ -24,7 +26,7 @@ export default class FormValidator {
      *
      * @return {void}
      */
-    init(): void;
+    private init;
     /**
      * Merge two objects
      *

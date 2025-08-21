@@ -53,6 +53,8 @@ modular code
 
     let commentForm = new FormValidator("#commentForm");
 
+    let commentForm = new FormValidator(document.getElementById('commentForm'));
+
 	let commentForm = new FormValidator("#commentForm", {
         errorElement: 'label',
         errorClass: 'error',

@@ -12,9 +12,11 @@
 
 	class FormValidator {
 	    /**
-	     * Constructor for the FormHandler class.
-	     * @param {string} id - The ID of the HTML form element.
-	     * @return {void}
+	     * Creates an instance of the form handler with the specified settings and binds it to a form element.
+	     *
+	     * @param {HTMLFormElement | string} selector - The form element or the string selector used to identify the form in the DOM.
+	     * @param {FormSettings} [settings] - Optional configuration settings for initializing the form handler, including validation rules and error handling options.
+	     * @return {void} Initializes the form handler with the provided form element and settings and prepares it for use.
 	     */
 	    constructor(selector, settings) {
 	        this.messages = {
@@ -35,7 +37,12 @@
 	            range: 'Please enter a value between {0} and {1}',
 	            regExp: 'Please enter a value matching the requested format.'
 	        };
-	        this.form = document.querySelector(selector);
+	        if (typeof selector === 'string') {
+	            this.form = document.querySelector(selector);
+	        }
+	        else if (typeof selector === 'object') {
+	            this.form = selector;
+	        }
 	        if (this.form) {
 	            let default_settings = {
 	                ignore: null,
@@ -76,21 +83,23 @@
 	     * @return {void}
 	     */
 	    init() {
-	        this.form.setAttribute('novalidate', '');
-	        this.checkSubmit();
-	        this.fields = Array.from(this.form.querySelectorAll('input[name], textarea, select'));
-	        if (this.settings && this.settings.ignore) {
-	            let ignoreFields = Array.from(this.form.querySelectorAll(this.settings.ignore));
-	            this.fields = this.fields.filter(element => !ignoreFields.includes(element));
+	        if (this.form) {
+	            this.form.setAttribute('novalidate', '');
+	            this.checkSubmit();
+	            this.fields = Array.from(this.form.querySelectorAll('input[name], textarea, select'));
+	            if (this.settings && this.settings.ignore) {
+	                let ignoreFields = Array.from(this.form.querySelectorAll(this.settings.ignore));
+	                this.fields = this.fields.filter(element => !ignoreFields.includes(element));
+	            }
+	            this.fields.forEach(field => {
+	                field.addEventListener('blur', this.fieldValidationEvent.bind(this));
+	                field.addEventListener('keyup', this.fieldValidationEvent.bind(this));
+	                field.addEventListener('change', this.fieldValidationEvent.bind(this));
+	            });
+	            this.form.addEventListener("reset", (_) => {
+	                this.resetForm();
+	            });
 	        }
-	        this.fields.forEach(field => {
-	            field.addEventListener('blur', this.fieldValidationEvent.bind(this));
-	            field.addEventListener('keyup', this.fieldValidationEvent.bind(this));
-	            field.addEventListener('change', this.fieldValidationEvent.bind(this));
-	        });
-	        this.form.addEventListener("reset", (_) => {
-	            this.resetForm();
-	        });
 	    }
 	    /**
 	     * Merge two objects
@@ -235,13 +244,14 @@
 	            }
 	            if (isValid && this.settings && this.settings.rules) {
 	                this.settings.rules.forEach(rule => {
+	                    var _a;
 	                    if (rule.fieldName == fieldName && rule.validation) {
 	                        let min = rule.validation.min;
 	                        let max = rule.validation.max;
 	                        switch (rule.validation.method) {
 	                            case 'equalTo':
 	                                if (rule.validation.field) {
-	                                    let equalToField = this.form.querySelector(rule.validation.field);
+	                                    let equalToField = (_a = this.form) === null || _a === void 0 ? void 0 : _a.querySelector(rule.validation.field);
 	                                    if (equalToField) {
 	                                        isValid = (fieldValue == equalToField.value);
 	                                        if (!isValid && !customErrorMessage) {
@@ -356,7 +366,7 @@
 	     * @return {Array<Element>} - An array of elements matching the given name attribute.
 	     */
 	    findByName(name) {
-	        return Array.from(this.form.querySelectorAll("[name='" + this.escapeCssMeta(name) + "']"));
+	        return Array.from((this.form) ? this.form.querySelectorAll("[name='" + this.escapeCssMeta(name) + "']") : []);
 	    }
 	    /**
 	     * Check if the given HTML input element is a radio button or checkbox.
@@ -463,7 +473,7 @@
 	     * @return {boolean} - Returns true if at least one radio button or checkbox with the specified name is checked, false otherwise.
 	     */
 	    validateCheckboxRadio(name) {
-	        let element = Array.from(this.form.querySelectorAll('input[name="' + name + '"]'));
+	        let element = Array.from((this.form) ? this.form.querySelectorAll('input[name="' + name + '"]') : []);
 	        for (var i = 0; i < element.length; i++) {
 	            let checked = element[i].checked;
 	            if (checked) {

@@ -169,7 +169,7 @@
         let messages = {
             required: 'Required field' //override default message
         }
-        let signupForm = new FormValidator("#signupForm", {
+        let signupForm = new FormValidator(document.getElementById('signupForm'), {
             errorElement: 'label',
             messages: messages,
             rules: [
