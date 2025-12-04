@@ -246,8 +246,8 @@ Example of custom validation:
         rules: [
             {
                 errorMessage: 'Username already in use',
-                method: function () {
-                    console.log('remote validation');
+                method: function (fieldValue, field) {
+                    console.log('remote validation', fieldValue);
                     return true;
                 },
             }
