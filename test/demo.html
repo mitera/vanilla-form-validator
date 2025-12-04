@@ -178,9 +178,8 @@
                     rules: [
                         {
                             errorMessage: 'Username already in use',
-                            method: 'custom',
-                            action: function () {
-                                console.log('remote validation');
+                            method: function (fieldValue, field) {
+                                console.log('remote validation', fieldValue, field);
                                 return true;
                             },
                         }
@@ -199,8 +198,8 @@
                     name: 'newsletter',
                     rules: [
                         {
-                            method: 'custom',
-                            action: function () {
+                            method: function (fieldValue, field) {
+                                console.log('remote validation', fieldValue, field);
                                 let newsletter = document.querySelector('[name="newsletter"]');
                                 let newsletter_topics = document.getElementById('newsletter_topics');
                                 if (newsletter.checked) {
@@ -218,8 +217,8 @@
                     rules: [
                         {
                             errorMessage: 'Please select at least two topics you\'d like to receive.',
-                            method: 'custom',
-                            action: function () {
+                            method: function (fieldValue, field) {
+                                console.log('remote validation', fieldValue, field);
                                 let newsletter = document.querySelector('[name="newsletter"]');
                                 if (newsletter.checked) {
                                     let size = 0

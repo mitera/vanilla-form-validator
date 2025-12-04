@@ -1,7 +1,7 @@
 interface FormRuleValidation {
-    method?: string | null;
+    method?: string | Function | null;
     field?: string | null;
-    action?: any | null;
+    action?: Function | null;
     min?: number | null;
     max?: number | null;
     errorMessage: string | null;

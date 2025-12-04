@@ -1,3 +1,7 @@
+- <a name="2.0.1"></a>
+# 2.0.1 (2025-12-04)
+- Refactor `method` property in validation rules to support function types, remove deprecated `custom` method, update documentation and type definitions, and improve internal validation logic.
+
 <a name="2.0.0"></a>
 # 2.0.0 (2025-12-04)
 - Refactor the validation logic to use `fields` instead of `rules` in `FormSettings` to improve clarity and hierarchy, add more validations to each fields with their own error message.

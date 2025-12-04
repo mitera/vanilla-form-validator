@@ -186,11 +186,10 @@ for other fields or cases add an array of fields:
 fields configuration:
 - `name` is the name of the field
 - `rules` is an object to configure
-  - `method` available methods are: `equalTo, minlength, maxlength, rangelength, custom`
+  - `method` available methods are: `equalTo, minlength, maxlength, rangelength` or javascript `function(fieldValue, field)`
   - `field` is a css rule for find a field, this option is use by `equalTo` method
   - `min` is min integer value used by `minlength, rangelength`
   - `max` is max integer value used by `maxlength, rangelength`
-  - `action` is a custom method for validate field must be return a boolean value
   - `errorMessage` is an optional error message
 
 Preconfigured validation are: `equalTo, minlength, maxlength, rangelength`
@@ -247,8 +246,7 @@ Example of custom validation:
         rules: [
             {
                 errorMessage: 'Username already in use',
-                method: 'custom',
-                action: function () {
+                method: function () {
                     console.log('remote validation');
                     return true;
                 },
@@ -294,6 +292,7 @@ after:
 - `rules -> fieldName` is removed, use `fields -> name` instead
 - `rules -> validation` is removed, use `fields ->  rules` instead
 - `rules -> errorMessage` is removed, use `fields -> rules -> errorMessage` instead
+- `rules -> method: 'custom'` is removed, use `fields -> method: function(fieldValue, field) {}` instead
 
 ### Changelog
 

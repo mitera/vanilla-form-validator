@@ -1,6 +1,6 @@
 /*!
  * @author Simone Miterangelis <simone@mite.it>
- * vanilla-form-validator v2.0.0 by @mitera
+ * vanilla-form-validator v2.0.1 by @mitera
  * https://github.com/mitera/vanilla-form-validator
  * Released under the MIT License.
  */
@@ -248,72 +248,72 @@
 	                        fieldSetting.rules.forEach(rule => {
 	                            var _a;
 	                            if (isValid) {
-	                                let min = rule.min;
-	                                let max = rule.max;
-	                                switch (rule.method) {
-	                                    case 'equalTo':
-	                                        if (rule.field) {
-	                                            let equalToField = (_a = this.form) === null || _a === void 0 ? void 0 : _a.querySelector(rule.field);
-	                                            if (equalToField) {
-	                                                isValid = (fieldValue == equalToField.value);
+	                                if (typeof rule.method === 'function') {
+	                                    isValid = rule.method(fieldValue, field);
+	                                    if (!isValid && !customErrorMessage) {
+	                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.remote;
+	                                    }
+	                                }
+	                                else {
+	                                    let min = rule.min;
+	                                    let max = rule.max;
+	                                    switch (rule.method) {
+	                                        case 'equalTo':
+	                                            if (rule.field) {
+	                                                let equalToField = (_a = this.form) === null || _a === void 0 ? void 0 : _a.querySelector(rule.field);
+	                                                if (equalToField) {
+	                                                    isValid = (fieldValue == equalToField.value);
+	                                                    if (!isValid && !customErrorMessage) {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.equalTo;
+	                                                    }
+	                                                }
+	                                            }
+	                                            break;
+	                                        case 'minlength':
+	                                            if (min) {
+	                                                isValid = this.minlength(fieldValue, field, min);
 	                                                if (!isValid && !customErrorMessage) {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.equalTo;
+	                                                    if (field.getAttribute('min')) {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.min;
+	                                                    }
+	                                                    else {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.minlength;
+	                                                    }
+	                                                    errorMessage = errorMessage.replace('{0}', min.toString());
 	                                                }
 	                                            }
-	                                        }
-	                                        break;
-	                                    case 'minlength':
-	                                        if (min) {
-	                                            isValid = this.minlength(fieldValue, field, min);
-	                                            if (!isValid && !customErrorMessage) {
-	                                                if (field.getAttribute('min')) {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.min;
+	                                            break;
+	                                        case 'maxlength':
+	                                            if (max) {
+	                                                isValid = this.maxlength(fieldValue, field, max);
+	                                                if (!isValid && !customErrorMessage) {
+	                                                    if (field.getAttribute('max')) {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.max;
+	                                                    }
+	                                                    else {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.maxlength;
+	                                                    }
+	                                                    errorMessage = errorMessage.replace('{0}', max.toString());
 	                                                }
-	                                                else {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.minlength;
-	                                                }
-	                                                errorMessage = errorMessage.replace('{0}', min.toString());
 	                                            }
-	                                        }
-	                                        break;
-	                                    case 'maxlength':
-	                                        if (max) {
-	                                            isValid = this.maxlength(fieldValue, field, max);
-	                                            if (!isValid && !customErrorMessage) {
-	                                                if (field.getAttribute('max')) {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.max;
+	                                            break;
+	                                        case 'rangelength':
+	                                            if (min && max) {
+	                                                isValid = this.rangelength(fieldValue, field, [min, max]);
+	                                                if (!isValid && !customErrorMessage) {
+	                                                    if (field.getAttribute('max') && field.getAttribute('min')) {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.range;
+	                                                    }
+	                                                    else {
+	                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.rangelength;
+	                                                    }
+	                                                    errorMessage = errorMessage
+	                                                        .replace('{0}', min.toString())
+	                                                        .replace('{1}', max.toString());
 	                                                }
-	                                                else {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.maxlength;
-	                                                }
-	                                                errorMessage = errorMessage.replace('{0}', max.toString());
 	                                            }
-	                                        }
-	                                        break;
-	                                    case 'rangelength':
-	                                        if (min && max) {
-	                                            isValid = this.rangelength(fieldValue, field, [min, max]);
-	                                            if (!isValid && !customErrorMessage) {
-	                                                if (field.getAttribute('max') && field.getAttribute('min')) {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.range;
-	                                                }
-	                                                else {
-	                                                    errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.rangelength;
-	                                                }
-	                                                errorMessage = errorMessage
-	                                                    .replace('{0}', min.toString())
-	                                                    .replace('{1}', max.toString());
-	                                            }
-	                                        }
-	                                        break;
-	                                    case 'custom':
-	                                        if (rule.action) {
-	                                            isValid = rule.action();
-	                                            if (!isValid && !customErrorMessage) {
-	                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.remote;
-	                                            }
-	                                        }
-	                                        break;
+	                                            break;
+	                                    }
 	                                }
 	                            }
 	                        });
