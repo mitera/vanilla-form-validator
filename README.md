@@ -185,7 +185,7 @@ for other fields or cases add an array of fields:
 
 fields configuration:
 - `name` is the name of the field
-- `rules` is an object to configure
+- `rules` is an array of object to configure
   - `method` available methods are: `equalTo, minlength, maxlength, rangelength` or javascript `function(fieldValue, field)`
   - `field` is a css rule for find a field, this option is use by `equalTo` method
   - `min` is min integer value used by `minlength, rangelength`
