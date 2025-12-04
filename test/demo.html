@@ -200,9 +200,8 @@
                         {
                             method: function (fieldValue, field) {
                                 console.log('remote validation', fieldValue, field);
-                                let newsletter = document.querySelector('[name="newsletter"]');
                                 let newsletter_topics = document.getElementById('newsletter_topics');
-                                if (newsletter.checked) {
+                                if (field.checked) {
                                     newsletter_topics.removeAttribute('disabled')
                                 } else {
                                     newsletter_topics.setAttribute('disabled', '')
