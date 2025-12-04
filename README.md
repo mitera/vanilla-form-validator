@@ -70,7 +70,7 @@ The default `options` are:
 
     {
         ignore: null,
-        rules: null,
+        fields: null,
         errorElement: 'p',
         errorClass: 'error',
         errorFieldClass: null,
@@ -82,7 +82,7 @@ The default `options` are:
 Where:
 
 - `ignore` is an optional string containing one or more selectors to match fields to ignore. This string must be a valid CSS selector string
-- `rules` is an array of custom fields validation [Custom validations](#Custom-validations)
+- `fields` is an array of custom fields validation [Custom validations](#Custom-validations)
 - `errorElement` is an html tag to display error message
 - `errorClass` is a css class for display error message
 - `errorFieldClass` is a css class added when a field is not valid
@@ -264,7 +264,7 @@ before:
         rules: [
             {
                 fieldName: 'confirm_password',
-                errorMessage: 'Password not match'
+                errorMessage: 'Password not match',
                 validation: {
                     method: 'equalTo',
                     field: '#password'
@@ -277,14 +277,16 @@ after:
 
     let signupForm = new FormValidator("#signupForm", {
         fields: [
-            name: 'confirm_password',
-            rules: [
-                {
-                    method: 'equalTo',
-                    field: '#password',
-                    errorMessage: 'Password not match'
-                }
-            ]
+            {
+                name: 'confirm_password',
+                rules: [
+                    {
+                        method: 'equalTo',
+                        field: '#password',
+                        errorMessage: 'Password not match'
+                    }
+                ]
+            }
         ]
     })
 
@@ -296,7 +298,7 @@ after:
 
 ### Changelog
 
-To see what's new or changed in the latest version, see the [changelog](https://github.com/mitera/valilla-form-validator/blob/master/CHANGELOG.md)
+To see what's new or changed in the latest version, see the [changelog](https://github.com/mitera/valilla-form-validator/blob/main/CHANGELOG.md)
 
 ### License
 
