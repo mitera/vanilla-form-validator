@@ -41,7 +41,7 @@ export default class FormValidator {
 
             let default_settings: FormSettings = {
                 ignore: null,
-                rules: null,
+                fields: null,
                 errorElement: 'p',
                 errorClass: 'error',
                 errorFieldClass: null,
@@ -248,73 +248,77 @@ export default class FormValidator {
                     errorMessage = this.messages.regExp;
                 }
             }
-            if (isValid && this.settings && this.settings.rules) {
-                this.settings.rules.forEach(rule => {
-                    if (rule.fieldName == fieldName && rule.validation) {
-                        let min = rule.validation.min;
-                        let max = rule.validation.max;
-                        switch (rule.validation.method) {
-                            case 'equalTo':
-                                if (rule.validation.field) {
-                                    let equalToField = <HTMLInputElement>this.form?.querySelector(rule.validation.field);
-                                    if (equalToField) {
-                                        isValid = (fieldValue == equalToField.value);
+            if (isValid && this.settings && this.settings.fields) {
+                this.settings.fields.forEach(fieldSetting => {
+                    if (fieldSetting.name == fieldName && fieldSetting.rules) {
+                        fieldSetting.rules.forEach(rule => {
+                            if (isValid) {
+                                let min = rule.min;
+                                let max = rule.max;
+                                switch (rule.method) {
+                                case 'equalTo':
+                                    if (rule.field) {
+                                        let equalToField = <HTMLInputElement>this.form?.querySelector(rule.field);
+                                        if (equalToField) {
+                                            isValid = (fieldValue == equalToField.value);
+                                            if (!isValid && !customErrorMessage) {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.equalTo;
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case 'minlength':
+                                    if (min) {
+                                        isValid = this.minlength(fieldValue, field, min);
                                         if (!isValid && !customErrorMessage) {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.equalTo;
+                                            if (field.getAttribute('min')) {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.min;
+                                            } else {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.minlength;
+                                            }
+                                            errorMessage = errorMessage.replace('{0}', min.toString());
                                         }
                                     }
-                                }
-                                break;
-                            case 'minlength':
-                                if (min) {
-                                    isValid = this.minlength(fieldValue, field, min);
-                                    if (!isValid && !customErrorMessage) {
-                                        if (field.getAttribute('min')) {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.min;
-                                        } else {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.minlength;
+                                    break;
+                                case 'maxlength':
+                                    if (max) {
+                                        isValid = this.maxlength(fieldValue, field, max);
+                                        if (!isValid && !customErrorMessage) {
+                                            if (field.getAttribute('max')) {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.max;
+                                            } else {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.maxlength;
+                                            }
+                                            errorMessage = errorMessage.replace('{0}', max.toString());
                                         }
-                                        errorMessage = errorMessage.replace('{0}', min.toString());
                                     }
-                                }
-                                break;
-                            case 'maxlength':
-                                if (max) {
-                                    isValid = this.maxlength(fieldValue, field, max);
-                                    if (!isValid && !customErrorMessage) {
-                                        if (field.getAttribute('max')) {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.max;
-                                        } else {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.maxlength;
+                                    break;
+                                case 'rangelength':
+                                    if (min && max) {
+                                        isValid = this.rangelength(fieldValue, field, [min, max]);
+                                        if (!isValid && !customErrorMessage) {
+                                            if (field.getAttribute('max') && field.getAttribute('min')) {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.range;
+                                            } else {
+                                                errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.rangelength;
+                                            }
+                                            errorMessage = errorMessage
+                                                .replace('{0}', min.toString())
+                                                .replace('{1}', max.toString());
                                         }
-                                        errorMessage = errorMessage.replace('{0}', max.toString());
                                     }
-                                }
-                                break;
-                            case 'rangelength':
-                                if (min && max) {
-                                    isValid = this.rangelength(fieldValue, field, [min, max]);
-                                    if (!isValid && !customErrorMessage) {
-                                        if (field.getAttribute('max') && field.getAttribute('min')) {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.range;
-                                        } else {
-                                            errorMessage = rule.errorMessage? rule.errorMessage : this.messages.rangelength;
+                                    break;
+                                case 'custom':
+                                    if (rule.action) {
+                                        isValid = rule.action();
+                                        if (!isValid && !customErrorMessage) {
+                                            errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.remote;
                                         }
-                                        errorMessage = errorMessage
-                                            .replace('{0}', min.toString())
-                                            .replace('{1}', max.toString());
                                     }
-                                }
-                                break;
-                            case 'custom':
-                                if (rule.validation.action) {
-                                    isValid = rule.validation.action();
-                                    if (!isValid && !customErrorMessage) {
-                                        errorMessage = rule.errorMessage? rule.errorMessage : this.messages.remote;
-                                    }
-                                }
-                                break;
-                        }
+                                    break;
+                            }
+                            }
+                        });
                     }
                 });
             }

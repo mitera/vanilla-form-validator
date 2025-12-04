@@ -175,23 +175,23 @@ Create a function on `submitHandler` property
 
 on input `text` it's possible to use `pattern` attribute
 
-for other fields or cases add an array of rules:
+for other fields or cases add an array of fields:
 
     let signupForm = new FormValidator("#signupForm", {
-        rules: [
+        fields: [
             ...
         ]
     })
 
-rules configuration:
-- `fieldName` is the name of the field
-- `errorMessage` is an optional error message
-- `validation` is an object to configure
+fields configuration:
+- `name` is the name of the field
+- `rules` is an object to configure
   - `method` available methods are: `equalTo, minlength, maxlength, rangelength, custom`
   - `field` is a css rule for find a field, this option is use by `equalTo` method
   - `min` is min integer value used by `minlength, rangelength`
   - `max` is max integer value used by `maxlength, rangelength`
   - `action` is a custom method for validate field must be return a boolean value
+  - `errorMessage` is an optional error message
 
 Preconfigured validation are: `equalTo, minlength, maxlength, rangelength`
 
@@ -200,51 +200,100 @@ These rules: `minlength, maxlength, rangelength` are applicable on input `text,r
 Example of preconfigured validation:
 
     {
-        fieldName: 'confirm_password',
-        validation: {
-            method: 'equalTo',
-            field: '#password'
-        }
+        name: 'confirm_password',
+        rules: [
+            {
+                method: 'equalTo',
+                field: '#password'
+            }
+        ]
     },
     {
-        fieldName: 'minselect',
-        errorMessage: 'Please select 2 elements.',
-        validation: {
-            method: 'minlength',
-            min: 2
-        }
+        name: 'minselect',
+        rules: [
+            {
+                errorMessage: 'Please select 2 elements.',
+                method: 'minlength',
+                min: 2
+            }
+        ]   
     },
     {
-        fieldName: 'maxfiles',
-        errorMessage: 'Please select max 2 files.',
-        validation: {
-            method: 'maxlength',
-            max: 2
-        }
+        name: 'maxfiles',
+        rules: [
+            {
+                errorMessage: 'Please select max 2 files.',
+                method: 'maxlength',
+                max: 2
+            }
+        ]
     },
     {
-        fieldName: 'topic2',
-        errorMessage: 'Please select 1 or 2 topics',
-        validation: {
-            method: 'rangelength',
-            min: 1,
-            max: 2
-        }
+        name: 'topic2',
+        rules: [
+            {
+                errorMessage: 'Please select 1 or 2 topics',
+                method: 'rangelength',
+                min: 1,
+                max: 2
+            }
+        ]
     }
 
 Example of custom validation:
 
     {
-        fieldName: 'username',
-        errorMessage: 'Username already in use',
-        validation: {
-            method: 'custom',
-            action: function () {
-                console.log('remote validation');
-                return true;
-            },
-        }
+        name: 'username',
+        rules: [
+            {
+                errorMessage: 'Username already in use',
+                method: 'custom',
+                action: function () {
+                    console.log('remote validation');
+                    return true;
+                },
+            }
+        ]
     }
+
+### Migration from v1 to v2
+
+Refactor the validation logic to use `fields` instead of `rules` in `FormSettings` to improve clarity and hierarchy, add more validations to each fields with their own error message.
+
+before:
+
+    let signupForm = new FormValidator("#signupForm", {
+        rules: [
+            {
+                fieldName: 'confirm_password',
+                errorMessage: 'Password not match'
+                validation: {
+                    method: 'equalTo',
+                    field: '#password'
+                }
+            }
+        ]
+    })
+
+after:
+
+    let signupForm = new FormValidator("#signupForm", {
+        fields: [
+            name: 'confirm_password',
+            rules: [
+                {
+                    method: 'equalTo',
+                    field: '#password',
+                    errorMessage: 'Password not match'
+                }
+            ]
+        ]
+    })
+
+- `rules` is removed, use `fields` instead
+- `rules -> fieldName` is removed, use `fields -> name` instead
+- `rules -> validation` is removed, use `fields ->  rules` instead
+- `rules -> errorMessage` is removed, use `fields -> rules -> errorMessage` instead
 
 ### Changelog
 

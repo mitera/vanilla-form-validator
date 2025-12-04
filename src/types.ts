@@ -4,11 +4,6 @@ interface FormRuleValidation {
     action?: any | null;
     min?: number | null;
     max?: number | null;
-}
-
-interface FormRule {
-    fieldName?: string | null;
-    validation?: FormRuleValidation | null;
     errorMessage: string | null;
 }
 
@@ -33,7 +28,7 @@ interface FormMessages {
 
 interface FormSettings {
     ignore?: string | null;
-    rules?: FormRule[] | null;
+    fields?: FormField[] | null;
     errorElement?: string | null;
     errorClass?: string | null;
     errorFieldClass?: string | null;
@@ -42,9 +37,14 @@ interface FormSettings {
     messages?: FormMessages;
 }
 
+interface FormField {
+    name?: string | null;
+    rules?: FormRuleValidation[] | null;
+}
+
 export {
     FormRuleValidation,
-    FormRule,
+    FormField,
     FormMessages,
     FormSettings
 }

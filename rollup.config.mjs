@@ -3,7 +3,7 @@ import rollupTypescript from '@rollup/plugin-typescript';
 
 const license = `/*!
  * @author Simone Miterangelis <simone@mite.it>
- * vanilla-form-validator v1.1.0 by @mitera
+ * vanilla-form-validator v2.0.0 by @mitera
  * https://github.com/mitera/vanilla-form-validator
  * Released under the MIT License.
  */`;

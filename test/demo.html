@@ -172,86 +172,100 @@
         let signupForm = new FormValidator(document.getElementById('signupForm'), {
             errorElement: 'label',
             messages: messages,
-            rules: [
+            fields: [
                 {
-                    fieldName: 'username',
-                    errorMessage: 'Username already in use',
-                    validation: {
-                        method: 'custom',
-                        action: function () {
-                            console.log('remote validation');
-                            return true;
-                        },
-                    }
-                },
-                {
-                    fieldName: 'confirm_password',
-                    validation: {
-                        method: 'equalTo',
-                        field: '#password'
-                    }
-                },
-                {
-                    fieldName: 'newsletter',
-                    validation: {
-                        method: 'custom',
-                        action: function () {
-                            let newsletter = document.querySelector('[name="newsletter"]');
-                            let newsletter_topics = document.getElementById('newsletter_topics');
-                            if (newsletter.checked) {
-                                newsletter_topics.removeAttribute('disabled')
-                            } else {
-                                newsletter_topics.setAttribute('disabled', '')
-                            }
-                            return true;
+                    name: 'username',
+                    rules: [
+                        {
+                            errorMessage: 'Username already in use',
+                            method: 'custom',
+                            action: function () {
+                                console.log('remote validation');
+                                return true;
+                            },
                         }
-                    }
+                    ]
                 },
                 {
-                    fieldName: 'topic',
-                    errorMessage: 'Please select at least two topics you\'d like to receive.',
-                    validation: {
-                        method: 'custom',
-                        action: function () {
-                            let newsletter = document.querySelector('[name="newsletter"]');
-                            if (newsletter.checked) {
-                                let size = 0
-                                let allCheckBox = document.querySelectorAll('[name="topic"]')
-                                allCheckBox.forEach((checkbox) => {
-                                    if (checkbox.checked) {
-                                        size++;
-                                    }
-                                })
-                                return size >= 2;
-                            }
-                            return true;
+                    name: 'confirm_password',
+                    rules: [
+                        {
+                            method: 'equalTo',
+                            field: '#password'
                         }
-                    }
+                    ]
                 },
                 {
-                    fieldName: 'topic2',
-                    errorMessage: 'Please select 1 or 2 topics',
-                    validation: {
-                        method: 'rangelength',
-                        min: 1,
-                        max: 2
-                    }
+                    name: 'newsletter',
+                    rules: [
+                        {
+                            method: 'custom',
+                            action: function () {
+                                let newsletter = document.querySelector('[name="newsletter"]');
+                                let newsletter_topics = document.getElementById('newsletter_topics');
+                                if (newsletter.checked) {
+                                    newsletter_topics.removeAttribute('disabled')
+                                } else {
+                                    newsletter_topics.setAttribute('disabled', '')
+                                }
+                                return true;
+                            }
+                        }
+                    ]
                 },
                 {
-                    fieldName: 'minselect',
-                    errorMessage: 'Please select 2 elements.',
-                    validation: {
-                        method: 'minlength',
-                        min: 2
-                    }
+                    name: 'topic',
+                    rules: [
+                        {
+                            errorMessage: 'Please select at least two topics you\'d like to receive.',
+                            method: 'custom',
+                            action: function () {
+                                let newsletter = document.querySelector('[name="newsletter"]');
+                                if (newsletter.checked) {
+                                    let size = 0
+                                    let allCheckBox = document.querySelectorAll('[name="topic"]')
+                                    allCheckBox.forEach((checkbox) => {
+                                        if (checkbox.checked) {
+                                            size++;
+                                        }
+                                    })
+                                    return size >= 2;
+                                }
+                                return true;
+                            }
+                        }
+                    ]
                 },
                 {
-                    fieldName: 'maxfiles',
-                    errorMessage: 'Please select max 2 files.',
-                    validation: {
-                        method: 'maxlength',
-                        max: 2
-                    }
+                    name: 'topic2',
+                    rules: [
+                        {
+                            errorMessage: 'Please select 1 or 2 topics',
+                            method: 'rangelength',
+                            min: 1,
+                            max: 2
+                        }
+                    ]
+                },
+                {
+                    name: 'minselect',
+                    rules: [
+                        {
+                            errorMessage: 'Please select 2 elements.',
+                            method: 'minlength',
+                            min: 2
+                        }
+                    ]
+                },
+                {
+                    name: 'maxfiles',
+                    rules: [
+                        {
+                            errorMessage: 'Please select max 2 files.',
+                            method: 'maxlength',
+                            max: 2
+                        }
+                    ]
                 }
             ],
             submitHandler: function () {
