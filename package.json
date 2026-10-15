@@ -6,6 +6,10 @@
   "description": "a vanilla form validator",
   "main": "dist/vanilla-form-validator.js",
   "types": "dist/vanilla-form-validator.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mitera/vanilla-form-validator.git"
