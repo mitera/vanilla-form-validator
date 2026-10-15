@@ -14,6 +14,9 @@
 		"rangelength": "Veuillez fournir une valeur qui contient entre {0} et {1} caractères.",
 		"range": "Veuillez fournir une valeur entre {0} et {1}.",
 		"max": "Veuillez fournir une valeur inférieure ou égale à {0}.",
-		"min": "Veuillez fournir une valeur supérieure ou égale à {0}."
+		"min": "Veuillez fournir une valeur supérieure ou égale à {0}.",
+		"phone": "Veuillez fournir un numéro de téléphone valide.",
+		"file": "Veuillez sélectionner un fichier.",
+		"regExp": "Veuillez fournir une valeur au format demandé."
 	}
 }

@@ -14,6 +14,9 @@
 		"rangelength": "Por favor, escribe un valor entre {0} y {1} caracteres." ,
 		"range": "Por favor, escribe un valor entre {0} y {1}." ,
 		"max": "Por favor, escribe un valor menor o igual a {0}." ,
-		"min": "Por favor, escribe un valor mayor o igual a {0}."
+		"min": "Por favor, escribe un valor mayor o igual a {0}." ,
+		"phone": "Por favor, escribe un número de teléfono válido." ,
+		"file": "Por favor, selecciona un archivo." ,
+		"regExp": "Por favor, escribe un valor con el formato solicitado."
 	}
 }

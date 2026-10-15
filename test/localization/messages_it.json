@@ -14,7 +14,8 @@
     "rangelength": "Inserisci un valore compreso tra {0} e {1} caratteri",
     "range": "Inserisci un valore compreso tra {0} e {1}",
     "max": "Inserisci un valore minore o uguale a {0}",
-    "min": "Inserisci un valore maggiore o uguale a {0}"
+    "min": "Inserisci un valore maggiore o uguale a {0}",
+    "regExp": "Inserisci un valore nel formato richiesto"
   }
 }
 

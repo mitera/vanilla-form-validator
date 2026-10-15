@@ -15,6 +15,7 @@
 - Whitespace-only values don't satisfy `required`.
 - URLs with `localhost`, private network addresses and uppercase letters are valid.
 - Messages (settings or `loadMessages`) are merged only for known keys with string values; `loadMessages` handles HTTP errors.
+- Add the missing `phone`, `file`, `regExp` (and `remote` for German) translations to the localization files.
 
 ### Features
 - Custom rule `method` can return a `Promise<boolean>`: the error is displayed when resolved and the submission waits for pending checks.

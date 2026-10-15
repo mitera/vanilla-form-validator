@@ -12,6 +12,10 @@
 		"equalTo": "Bitte denselben Wert wiederholen.",
 		"range": "Geben Sie bitte einen Wert zwischen {0} und {1} ein.",
 		"max": "Geben Sie bitte einen Wert kleiner oder gleich {0} ein.",
-		"min": "Geben Sie bitte einen Wert größer oder gleich {0} ein."
+		"min": "Geben Sie bitte einen Wert größer oder gleich {0} ein.",
+		"remote": "Korrigieren Sie bitte dieses Feld.",
+		"phone": "Geben Sie bitte eine gültige Telefonnummer ein.",
+		"file": "Bitte wählen Sie eine Datei aus.",
+		"regExp": "Geben Sie bitte einen Wert im geforderten Format ein."
 	}
 }
