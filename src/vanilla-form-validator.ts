@@ -1,10 +1,18 @@
-import {FormMessages, FormSettings} from "./types";
+import {FormMessages, FormRuleValidation, FormSettings} from "./types";
+
+const FIELD_SELECTOR = 'input[name], textarea, select';
+
+interface FieldValidationResult {
+    valid: boolean;
+    pending?: Promise<boolean>;
+}
 
 export default class FormValidator {
 
     private form?: HTMLFormElement;
-    private fields?: Element[] | null;
     private settings?: FormSettings;
+    private listeners: [string, EventListener][] = [];
+    private pendingValidations = new Map<HTMLInputElement, Promise<boolean>>();
     private messages: FormMessages = {
         required: 'This field is required.',
         remote: 'Please fix this field.',
@@ -18,8 +26,8 @@ export default class FormValidator {
         maxlength: 'Please enter no more than {0} characters.',
         minlength: 'Please enter at least {0} characters.',
         rangelength: 'Please enter a value between {0} and {1} characters long',
-        max: 'Please enter a value than {0}.',
-        min: 'Please enter a value at least {0}.',
+        max: 'Please enter a value less than or equal to {0}.',
+        min: 'Please enter a value greater than or equal to {0}.',
         range: 'Please enter a value between {0} and {1}',
         regExp: 'Please enter a value matching the requested format.'
     }
@@ -46,13 +54,13 @@ export default class FormValidator {
                 errorClass: 'error',
                 errorFieldClass: null,
                 validFormClass: 'was-validated',
-                submitHandler: null,
-                messages: this.messages
+                submitHandler: null
             }
 
             this.settings = {...default_settings, ...settings} as FormSettings;
 
-            this.messages = this.merge(this.settings.messages, this.messages);
+            this.mergeMessages(this.settings.messages);
+            this.settings.messages = this.messages;
 
             this.init();
         }
@@ -63,21 +71,45 @@ export default class FormValidator {
      *
      * @param {string} jsonFile - The path of the JSON file containing the messages.
      *
-     * @return {void}
+     * @return {Promise<void>} Resolves once the messages have been loaded (errors are logged, not rethrown).
      */
-    loadMessages(jsonFile: string) {
-        fetch(jsonFile)
-            .then(response => response.json())
+    loadMessages(jsonFile: string): Promise<void> {
+        return fetch(jsonFile)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Unable to load messages from ' + jsonFile + ' (HTTP ' + response.status + ')');
+                }
+                return response.json();
+            })
             .then(data => {
-                if (this.settings && data.messages) {
-                    this.messages = this.merge(data.messages, this.messages);
+                if (this.settings && data) {
+                    this.mergeMessages(data.messages);
                 }
             })
             .catch(error => console.log(error));
     }
 
     /**
-     * Initialize the form validation by setting up event listeners on form fields for blur, keyup, change events.
+     * Copy the known messages from the given source, ignoring unknown keys and non-string values.
+     *
+     * @param {Partial<FormMessages>} source - The messages to merge into the current ones.
+     * @return {void}
+     */
+    private mergeMessages(source?: Partial<FormMessages> | null) {
+        if (!source || typeof source !== 'object') {
+            return;
+        }
+        (Object.keys(this.messages) as (keyof FormMessages)[]).forEach(key => {
+            const value = source[key];
+            if (Object.prototype.hasOwnProperty.call(source, key) && typeof value === 'string') {
+                this.messages[key] = value;
+            }
+        });
+    }
+
+    /**
+     * Initialize the form validation by setting up delegated event listeners (focusout, keyup, change) on the form,
+     * so that fields added after the initialization are validated as well.
      * Also adds a listener for form reset event.
      *
      * @return {void}
@@ -88,37 +120,71 @@ export default class FormValidator {
 
             this.checkSubmit();
 
-            this.fields = Array.from(this.form.querySelectorAll('input[name], textarea, select'));
-            if (this.settings && this.settings.ignore) {
-                let ignoreFields = Array.from(this.form.querySelectorAll(this.settings.ignore));
-                this.fields = this.fields.filter(element => !ignoreFields.includes(element));
-            }
-            this.fields.forEach(field => {
-                field.addEventListener('blur', this.fieldValidationEvent.bind(this));
-                field.addEventListener('keyup', this.fieldValidationEvent.bind(this));
-                field.addEventListener('change', this.fieldValidationEvent.bind(this));
+            ['focusout', 'keyup', 'change'].forEach(type => {
+                this.addListener(type, e => this.fieldValidationEvent(e));
             });
 
-            this.form.addEventListener("reset", (_) => {
-                this.resetForm();
-            });
+            this.addListener('reset', () => this.clearValidation());
         }
     }
 
     /**
-     * Merge two objects
+     * Register an event listener on the form and keep track of it so that it can be removed by destroy().
      *
-     * @param {FormMessages} o1 Object 1
-     * @param {FormMessages} o2 Object 2
-     * @return {FormMessages}
+     * @param {string} type - The event type.
+     * @param {EventListener} listener - The listener to register.
+     * @return {void}
      */
-    merge(o1: any, o2: any) {
-        if (o1 != null) {
-            for (var i in o1) {
-                o2[i] = o1[i];
-            }
+    private addListener(type: string, listener: EventListener) {
+        if (this.form) {
+            this.form.addEventListener(type, listener);
+            this.listeners.push([type, listener]);
         }
-        return o2;
+    }
+
+    /**
+     * Remove all the event listeners registered by the validator.
+     *
+     * @return {void}
+     */
+    destroy() {
+        const form = this.form;
+        if (form) {
+            this.listeners.forEach(([type, listener]) => form.removeEventListener(type, listener));
+            form.removeAttribute('novalidate');
+        }
+        this.listeners = [];
+        this.pendingValidations.clear();
+    }
+
+    /**
+     * Return the fields to validate, excluding the ones matching the `ignore` setting.
+     *
+     * @return {HTMLInputElement[]} The fields of the form to validate.
+     */
+    private getFields() {
+        if (!this.form) {
+            return [];
+        }
+        let fields = Array.from(this.form.querySelectorAll(FIELD_SELECTOR));
+        if (this.settings && this.settings.ignore) {
+            let ignoreFields = Array.from(this.form.querySelectorAll(this.settings.ignore));
+            fields = fields.filter(element => !ignoreFields.includes(element));
+        }
+        return fields as HTMLInputElement[];
+    }
+
+    /**
+     * Check whether the given element is a field of the form that has to be validated.
+     *
+     * @param {Element} element - The element to check.
+     * @return {boolean} True if the element must be validated.
+     */
+    private isValidatable(element: Element) {
+        if (!this.form || !this.form.contains(element) || !element.matches(FIELD_SELECTOR)) {
+            return false;
+        }
+        return !(this.settings && this.settings.ignore && element.matches(this.settings.ignore));
     }
 
     /**
@@ -128,229 +194,375 @@ export default class FormValidator {
      * @return {void}
      */
     fieldValidationEvent(e: Event) {
-        const field = e.target as HTMLInputElement;
-        this.validateField(field);
+        const field = e.target;
+        if (!(field instanceof Element) || !this.isValidatable(field)) {
+            return;
+        }
+        this.validateField(<HTMLInputElement>field);
+        this.revalidateDependents(field);
+    }
+
+    /**
+     * Re-validate the non-empty fields having an `equalTo` rule that points to the changed field.
+     *
+     * @param {Element} changedField - The field that has just been changed.
+     * @return {void}
+     */
+    private revalidateDependents(changedField: Element) {
+        if (!this.settings || !this.settings.fields) {
+            return;
+        }
+        this.settings.fields.forEach(fieldSetting => {
+            const dependsOnChangedField = fieldSetting.name && fieldSetting.rules && fieldSetting.rules.some(rule =>
+                rule.method === 'equalTo' && rule.field && changedField.matches(rule.field)
+            );
+            if (dependsOnChangedField) {
+                this.findByName(<string>fieldSetting.name).forEach(dependent => {
+                    if (dependent !== changedField && (<HTMLInputElement>dependent).value !== '' && this.isValidatable(dependent)) {
+                        this.validateField(<HTMLInputElement>dependent);
+                    }
+                });
+            }
+        });
     }
 
     /**
      * Validates a field based on its type and any additional rules provided.
+     * Asynchronous rules (functions returning a Promise) don't affect the returned value:
+     * their error is displayed once they resolve, and they are awaited before submitting the form.
      *
      * @param {HTMLInputElement} field - The input field to be validated.
      * @return {boolean} Returns true if the field is valid, false if it is not.
      */
     validateField(field: HTMLInputElement) {
-        let fieldId = field.id;
-        const fieldName = field.name;
-        const fieldType = field.type;
-        const pattern = field.pattern;
-        switch (fieldType) {
-            case 'checkbox':
-            case 'radio':
-                fieldId = fieldName;
-                break;
+        return this.runFieldValidation(field).valid;
+    }
+
+    /**
+     * Validates a field and displays its error, returning the synchronous result and the pending asynchronous one.
+     *
+     * @param {HTMLInputElement} field - The input field to be validated.
+     * @return {FieldValidationResult} The validation result.
+     */
+    private runFieldValidation(field: HTMLInputElement): FieldValidationResult {
+        this.pendingValidations.delete(field);
+        if (field.matches(':disabled')) {
+            this.displayFieldError(field, null);
+            return {valid: true};
         }
-        const fieldValue = field.value;
-        let customErrorMessage = field.dataset.errorMessage ? field.dataset.errorMessage : '';
-        let errorMessage = '';
-        if (customErrorMessage) {
+        const customErrorMessage = field.dataset.errorMessage;
+        const asyncChecks: Promise<string | null>[] = [];
+        let errorMessage = this.getFieldError(field, asyncChecks);
+        if (errorMessage !== null && customErrorMessage) {
             errorMessage = customErrorMessage;
         }
-        let isValid = true;
+        this.displayFieldError(field, errorMessage);
+        if (errorMessage !== null || asyncChecks.length === 0) {
+            return {valid: errorMessage === null};
+        }
+
+        const pending: Promise<boolean> = Promise.all(asyncChecks)
+            .then(results => {
+                const asyncError = results.find(result => result !== null);
+                return asyncError === undefined ? null : asyncError;
+            })
+            .catch(() => this.messages.remote)
+            .then(asyncError => {
+                const message = asyncError !== null && customErrorMessage ? customErrorMessage : asyncError;
+                // Ignore the outcome of a validation superseded by a newer one
+                if (this.pendingValidations.get(field) === pending) {
+                    this.pendingValidations.delete(field);
+                    this.displayFieldError(field, message);
+                }
+                return message === null;
+            });
+        this.pendingValidations.set(field, pending);
+        return {valid: true, pending};
+    }
+
+    /**
+     * Return the first validation error of the field, or null if the field is valid.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @param {Promise<string | null>[]} asyncChecks - Collects the asynchronous rules to evaluate.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getFieldError(field: HTMLInputElement, asyncChecks: Promise<string | null>[]): string | null {
+        const fieldValue = field.value;
         if (field.hasAttribute('required')) {
-            switch (fieldType) {
-                case 'checkbox':
-                case 'radio':
-                    isValid = this.validateCheckboxRadio(fieldName);
-                    break;
-                default:
-                    isValid = this.validateText(fieldValue);
-            }
-            if (!isValid && !customErrorMessage) {
-                errorMessage = this.messages.required;
+            const filled = this.checkable(field) ? this.validateCheckboxRadio(field.name) : this.validateText(fieldValue);
+            if (!filled) {
+                return this.messages.required;
             }
         }
-        if (isValid && fieldValue && fieldValue !== '') {
-            switch (fieldType) {
-                case 'email':
-                    isValid = this.validateEmail(fieldValue);
-                    if (!isValid && !customErrorMessage) {
-                        errorMessage = this.messages.email;
-                    }
-                    break;
-                case 'tel':
-                    isValid = this.validatePhone(fieldValue);
-                    if (!isValid && !customErrorMessage) {
-                        errorMessage = this.messages.phone;
-                    }
-                    break;
-                case 'url':
-                    isValid = this.validateUrl(fieldValue);
-                    if (!isValid && !customErrorMessage) {
-                        errorMessage = this.messages.url;
-                    }
-                    break;
-                // case 'number':
-                //     isValid = this.validateNumber(fieldValue);
-                //     if (!isValid && !customErrorMessage) {
-                //         errorMessage = this.messages.number;
-                //     }
-                //     break;
-                case 'file':
-                    isValid = (field.files && field.files.length > 0) ? true : false;
-                    if (!isValid && !customErrorMessage) {
-                        errorMessage = this.messages.file;
-                    }
-                    break;
-                case 'date':
-                    isValid = this.validateDate(field);
-                    if (!isValid && !customErrorMessage) {
-                        errorMessage = this.messages.date;
-                    }
-                    break;
-                default:
-                    let minlength = field.getAttribute('minlength') ? field.getAttribute('minlength') : field.getAttribute('min');
-                    if (minlength && this.validateDigits(minlength)) {
-                        isValid = this.minlength(fieldValue, field, parseInt(minlength));
-                        if (!isValid && !customErrorMessage) {
-                            if (field.getAttribute('min'))
-                                errorMessage = this.messages.min.replace('{0}', minlength);
-                            else
-                                errorMessage = this.messages.minlength.replace('{0}', minlength);
-                        }
-                    }
-                    let maxlength = field.getAttribute('maxlength') ? field.getAttribute('maxlength') : field.getAttribute('max');
-                    if (maxlength && this.validateDigits(maxlength)) {
-                        isValid = this.maxlength(fieldValue, field, parseInt(maxlength));
-                        if (!isValid && !customErrorMessage) {
-                            if (field.getAttribute('max'))
-                                errorMessage = this.messages.max.replace('{0}', maxlength);
-                            else
-                                errorMessage = this.messages.maxlength.replace('{0}', maxlength);
-                        }
-                    }
-                    if (minlength && this.validateDigits(minlength) && maxlength && this.validateDigits(maxlength)) {
-                        isValid = this.rangelength(fieldValue, field, [parseInt(minlength), parseInt(maxlength)]);
-                        if (!isValid && !customErrorMessage) {
-                            if (field.getAttribute('max') && field.getAttribute('min'))
-                                errorMessage = this.messages.range
-                                    .replace('{0}', minlength)
-                                    .replace('{1}', maxlength);
-                            else
-                                errorMessage = this.messages.rangelength
-                                    .replace('{0}', minlength)
-                                    .replace('{1}', maxlength);
-                        }
-                    }
+        if (fieldValue !== '') {
+            const typeError = this.getTypeError(field);
+            if (typeError !== null) {
+                return typeError;
             }
-            if (isValid && fieldValue && fieldValue !== '' && pattern !== '') {
-                isValid = this.validateRegExp(pattern, fieldValue);
-                if (!isValid && !customErrorMessage) {
-                    errorMessage = this.messages.regExp;
+            if (field.pattern && !this.validateRegExp(field.pattern, fieldValue)) {
+                return this.messages.regExp;
+            }
+        }
+        // Count based rules (selected options, checked boxes, files) must run even if the field has no value
+        const countable = this.checkable(field) || field.nodeName.toLowerCase() === 'select' || field.type === 'file';
+        if (fieldValue !== '' || countable) {
+            return this.getRulesError(field, asyncChecks);
+        }
+        return null;
+    }
+
+    /**
+     * Return the error related to the type and to the HTML attributes of a field with a value.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getTypeError(field: HTMLInputElement): string | null {
+        const fieldValue = field.value;
+        switch (field.type) {
+            case 'email':
+                return this.validateEmail(fieldValue) ? null : this.messages.email;
+            case 'tel':
+                return this.validatePhone(fieldValue) ? null : this.messages.phone;
+            case 'url':
+                return this.validateUrl(fieldValue) ? null : this.messages.url;
+            case 'file':
+                return (field.files && field.files.length > 0) ? null : this.messages.file;
+            case 'date':
+                return this.validateDate(field) ? null : this.messages.date;
+            case 'number':
+            case 'range':
+                return this.getNumberRangeError(field);
+            default:
+                return this.getLengthError(field);
+        }
+    }
+
+    /**
+     * Validate the value of a numeric field against its `min` and `max` attributes (negative and decimal values allowed).
+     *
+     * @param {HTMLInputElement} field - The numeric field.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getNumberRangeError(field: HTMLInputElement): string | null {
+        const value = Number(field.value);
+        if (!isFinite(value)) {
+            return this.messages.number;
+        }
+        const min = this.getNumberAttribute(field, 'min');
+        const max = this.getNumberAttribute(field, 'max');
+        const tooLow = min !== null && value < min;
+        const tooHigh = max !== null && value > max;
+        if (!tooLow && !tooHigh) {
+            return null;
+        }
+        if (min !== null && max !== null) {
+            return this.formatMessage(this.messages.range, min, max);
+        }
+        return tooLow ? this.formatMessage(this.messages.min, <number>min) : this.formatMessage(this.messages.max, <number>max);
+    }
+
+    /**
+     * Read a numeric attribute of a field.
+     *
+     * @param {HTMLInputElement} field - The field.
+     * @param {string} name - The attribute name.
+     * @return {number | null} The attribute value, or null if missing or not a number.
+     */
+    private getNumberAttribute(field: HTMLInputElement, name: string) {
+        const attribute = field.getAttribute(name);
+        if (attribute === null || attribute.trim() === '') {
+            return null;
+        }
+        const value = Number(attribute);
+        return isFinite(value) ? value : null;
+    }
+
+    /**
+     * Validate the length of a field against its `minlength`/`min` and `maxlength`/`max` attributes.
+     *
+     * @param {HTMLInputElement} field - The field.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getLengthError(field: HTMLInputElement): string | null {
+        const minlength = field.getAttribute('minlength') || field.getAttribute('min');
+        const maxlength = field.getAttribute('maxlength') || field.getAttribute('max');
+        const min = minlength && this.validateDigits(minlength) ? parseInt(minlength) : null;
+        const max = maxlength && this.validateDigits(maxlength) ? parseInt(maxlength) : null;
+        const length = this.getLength(field.value, field);
+        const tooShort = min !== null && length < min;
+        const tooLong = max !== null && length > max;
+        if (!tooShort && !tooLong) {
+            return null;
+        }
+        if (min !== null && max !== null) {
+            const message = field.getAttribute('max') && field.getAttribute('min') ? this.messages.range : this.messages.rangelength;
+            return this.formatMessage(message, min, max);
+        }
+        if (tooShort) {
+            return this.formatMessage(field.getAttribute('min') ? this.messages.min : this.messages.minlength, <number>min);
+        }
+        return this.formatMessage(field.getAttribute('max') ? this.messages.max : this.messages.maxlength, <number>max);
+    }
+
+    /**
+     * Return the first error of the custom rules configured for the field in the `fields` setting.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @param {Promise<string | null>[]} asyncChecks - Collects the asynchronous rules to evaluate.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getRulesError(field: HTMLInputElement, asyncChecks: Promise<string | null>[]): string | null {
+        if (!this.settings || !this.settings.fields) {
+            return null;
+        }
+        for (const fieldSetting of this.settings.fields) {
+            if (fieldSetting.name !== field.name || !fieldSetting.rules) {
+                continue;
+            }
+            for (const rule of fieldSetting.rules) {
+                const error = this.getRuleError(field, rule, asyncChecks);
+                if (error !== null) {
+                    return error;
                 }
             }
-            if (isValid && this.settings && this.settings.fields) {
-                this.settings.fields.forEach(fieldSetting => {
-                    if (fieldSetting.name == fieldName && fieldSetting.rules) {
-                        fieldSetting.rules.forEach(rule => {
-                            if (isValid) {
-                                if (typeof rule.method === 'function') {
-                                    isValid = rule.method(fieldValue, field);
-                                    if (!isValid && !customErrorMessage) {
-                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.remote;
-                                    }
-                                } else {
-                                    let min = rule.min;
-                                    let max = rule.max;
-                                    switch (rule.method) {
-                                        case 'equalTo':
-                                            if (rule.field) {
-                                                let equalToField = <HTMLInputElement>this.form?.querySelector(rule.field);
-                                                if (equalToField) {
-                                                    isValid = (fieldValue == equalToField.value);
-                                                    if (!isValid && !customErrorMessage) {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.equalTo;
-                                                    }
-                                                }
-                                            }
-                                            break;
-                                        case 'minlength':
-                                            if (min) {
-                                                isValid = this.minlength(fieldValue, field, min);
-                                                if (!isValid && !customErrorMessage) {
-                                                    if (field.getAttribute('min')) {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.min;
-                                                    } else {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.minlength;
-                                                    }
-                                                    errorMessage = errorMessage.replace('{0}', min.toString());
-                                                }
-                                            }
-                                            break;
-                                        case 'maxlength':
-                                            if (max) {
-                                                isValid = this.maxlength(fieldValue, field, max);
-                                                if (!isValid && !customErrorMessage) {
-                                                    if (field.getAttribute('max')) {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.max;
-                                                    } else {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.maxlength;
-                                                    }
-                                                    errorMessage = errorMessage.replace('{0}', max.toString());
-                                                }
-                                            }
-                                            break;
-                                        case 'rangelength':
-                                            if (min && max) {
-                                                isValid = this.rangelength(fieldValue, field, [min, max]);
-                                                if (!isValid && !customErrorMessage) {
-                                                    if (field.getAttribute('max') && field.getAttribute('min')) {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.range;
-                                                    } else {
-                                                        errorMessage = rule.errorMessage ? rule.errorMessage : this.messages.rangelength;
-                                                    }
-                                                    errorMessage = errorMessage
-                                                        .replace('{0}', min.toString())
-                                                        .replace('{1}', max.toString());
-                                                }
-                                            }
-                                            break;
-                                    }
-                                }
-                            }
-                        });
+        }
+        return null;
+    }
+
+    /**
+     * Evaluate a single custom rule.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @param {FormRuleValidation} rule - The rule to evaluate.
+     * @param {Promise<string | null>[]} asyncChecks - Collects the rule if it is asynchronous.
+     * @return {string | null} The error message, or null if the rule is satisfied (or asynchronous).
+     */
+    private getRuleError(field: HTMLInputElement, rule: FormRuleValidation, asyncChecks: Promise<string | null>[]): string | null {
+        const fieldValue = field.value;
+        if (typeof rule.method === 'function') {
+            const message = rule.errorMessage ? rule.errorMessage : this.messages.remote;
+            const result = rule.method(fieldValue, field);
+            if (result && typeof result.then === 'function') {
+                asyncChecks.push(Promise.resolve(result).then(valid => valid ? null : message));
+                return null;
+            }
+            return result ? null : message;
+        }
+        const min = rule.min;
+        const max = rule.max;
+        switch (rule.method) {
+            case 'equalTo':
+                if (rule.field && this.form) {
+                    const equalToField = this.form.querySelector<HTMLInputElement>(rule.field);
+                    if (equalToField && fieldValue !== equalToField.value) {
+                        return rule.errorMessage ? rule.errorMessage : this.messages.equalTo;
                     }
-                });
+                }
+                return null;
+            case 'minlength':
+                if (min === null || min === undefined || this.minlength(fieldValue, field, min)) {
+                    return null;
+                }
+                return this.formatMessage(rule.errorMessage ? rule.errorMessage : (field.getAttribute('min') ? this.messages.min : this.messages.minlength), min);
+            case 'maxlength':
+                if (max === null || max === undefined || this.maxlength(fieldValue, field, max)) {
+                    return null;
+                }
+                return this.formatMessage(rule.errorMessage ? rule.errorMessage : (field.getAttribute('max') ? this.messages.max : this.messages.maxlength), max);
+            case 'rangelength':
+                if (min === null || min === undefined || max === null || max === undefined || this.rangelength(fieldValue, field, [min, max])) {
+                    return null;
+                }
+                return this.formatMessage(rule.errorMessage ? rule.errorMessage : (field.getAttribute('max') && field.getAttribute('min') ? this.messages.range : this.messages.rangelength), min, max);
+        }
+        return null;
+    }
+
+    /**
+     * Replace the `{0}`, `{1}`... placeholders of a message with the given parameters.
+     *
+     * @param {string} message - The message.
+     * @param {Array<string | number>} params - The values of the placeholders.
+     * @return {string} The formatted message.
+     */
+    private formatMessage(message: string, ...params: (string | number)[]) {
+        return params.reduce<string>((result, param, index) => result.split('{' + index + '}').join(String(param)), message);
+    }
+
+    /**
+     * Find the error element of a field: first inside the form, then in the document if it doesn't belong to another form.
+     *
+     * @param {string} errorHelpId - The id of the error element.
+     * @return {HTMLElement | null} The error element, or null if not found.
+     */
+    private findErrorElement(errorHelpId: string) {
+        if (!this.form) {
+            return null;
+        }
+        const inForm = this.form.querySelector<HTMLElement>('[id="' + this.escapeCssMeta(errorHelpId) + '"]');
+        if (inForm) {
+            return inForm;
+        }
+        const inDocument = document.getElementById(errorHelpId);
+        if (inDocument) {
+            const parentForm = inDocument.closest('form');
+            if (!parentForm || parentForm === this.form) {
+                return inDocument;
             }
         }
-        let errorHelpId = (fieldId ? fieldId : fieldName) + '-error';
-        let errorHelp = <HTMLElement>document.querySelector('#' + errorHelpId);
-        if (!errorHelp && this.settings) {
-            const errorHelpItem = document.createElement(this.settings.errorElement ? this.settings.errorElement : 'p');
-            errorHelpItem.className = this.settings.errorClass ? this.settings.errorClass : 'error';
-            errorHelpItem.id = errorHelpId;
-            field.insertAdjacentElement('afterend', errorHelpItem);
-            errorHelp = <HTMLElement>document.querySelector('#' + errorHelpId);
+        return null;
+    }
+
+    /**
+     * Show or hide the error message of a field and toggle the `errorFieldClass`.
+     *
+     * @param {HTMLInputElement} field - The field.
+     * @param {string | null} errorMessage - The error message, or null if the field is valid.
+     * @return {void}
+     */
+    private displayFieldError(field: HTMLInputElement, errorMessage: string | null) {
+        const isValid = errorMessage === null;
+        const fieldId = this.checkable(field) ? field.name : (field.id ? field.id : field.name);
+        const errorHelpId = fieldId + '-error';
+        let errorHelp = this.findErrorElement(errorHelpId);
+        if (!errorHelp && !isValid && this.settings) {
+            errorHelp = document.createElement(this.settings.errorElement ? this.settings.errorElement : 'p');
+            errorHelp.className = this.settings.errorClass ? this.settings.errorClass : 'error';
+            errorHelp.id = errorHelpId;
+            field.insertAdjacentElement('afterend', errorHelp);
         }
         if (errorHelp) {
             if (isValid) {
-                if (errorHelp) {
-                    errorHelp.style.setProperty('display', 'none');
-                }
-                if (this.settings && this.settings.errorFieldClass) {
-                    field.classList.remove(this.settings.errorFieldClass);
-                }
+                errorHelp.style.setProperty('display', 'none');
             } else {
-                errorHelp.innerText = errorMessage;
-                if (errorHelp) {
-                    errorHelp.style.setProperty('display', '');
-                }
-                if (this.settings && this.settings.errorFieldClass) {
-                    field.classList.add(this.settings.errorFieldClass);
-                }
+                errorHelp.innerText = <string>errorMessage;
+                errorHelp.style.setProperty('display', '');
             }
         }
+        const errorFieldClass = this.settings ? this.settings.errorFieldClass : null;
+        if (errorFieldClass) {
+            if (isValid) {
+                const group = this.checkable(field) ? this.findByName(field.name) : [field];
+                group.forEach(item => item.classList.remove(errorFieldClass));
+            } else {
+                field.classList.add(errorFieldClass);
+            }
+        }
+    }
 
-        return isValid;
+    /**
+     * Hide all the error messages, remove the error classes and discard the pending asynchronous validations.
+     *
+     * @return {void}
+     */
+    private clearValidation() {
+        this.pendingValidations.clear();
+        if (this.form && this.settings && this.settings.validFormClass) {
+            this.form.classList.remove(this.settings.validFormClass);
+        }
+        this.getFields().forEach(field => this.displayFieldError(field, null));
     }
 
     /**
@@ -404,7 +616,7 @@ export default class FormValidator {
                 } else {
                     switch (element.type) {
                         case "number":
-                            return parseInt(value);
+                            return parseFloat(value);
                         case "file":
                             if (element.files) {
                                 return element.files.length;
@@ -461,21 +673,14 @@ export default class FormValidator {
 
     /**
      * Validates the form fields and returns true if all fields are valid.
+     * Asynchronous rules are not awaited: use submitAction() to take them into account.
      *
      * @return {boolean} True if all form fields are valid, otherwise false.
      */
     validateForm() {
-        let isValid = true;
-        if (this.fields) {
-            this.fields.forEach(field => {
-                const el = field;
-                let isValidField = this.validateField(<HTMLInputElement>el);
-                if (!isValidField) {
-                    isValid = false;
-                }
-            });
-        }
-        return isValid;
+        return this.getFields()
+            .map(field => this.validateField(field))
+            .every(isValid => isValid);
     }
 
     /**
@@ -485,33 +690,22 @@ export default class FormValidator {
      * @return {boolean} - Returns true if at least one radio button or checkbox with the specified name is checked, false otherwise.
      */
     validateCheckboxRadio(name: string) {
-        let element = <HTMLInputElement[]>Array.from((this.form) ? this.form.querySelectorAll('input[name="' + name + '"]') : []);
-        for (var i = 0; i < element.length; i++) {
-            let checked = element[i].checked;
-            if (checked) {
-                element.forEach((item) => {
-                    if (this.settings && this.settings.errorFieldClass) {
-                        item.classList.remove(this.settings.errorFieldClass);
-                    }
-                });
-                return true;
-            }
-        }
-        return false;
+        return this.findByName(name).some(element => (<HTMLInputElement>element).checked);
     }
 
     /**
-     * Validates if the given text is not empty.
+     * Validates if the given text is not empty (whitespace only is considered empty).
      *
      * @param {string} value - The text to be validated.
      * @return {boolean} - True if the text is not empty, false otherwise.
      */
     validateText(value: string) {
-        return value.length > 0;
+        return value.trim().length > 0;
     }
 
     /**
      * Validate the given regular expression against the specified value.
+     * As for the HTML `pattern` attribute, the expression must match the whole value; an invalid expression is ignored.
      *
      * @param {string} regExp - The regular expression to validate against.
      * @param {string} value - The value to validate.
@@ -519,8 +713,18 @@ export default class FormValidator {
      * @returns {boolean} - True if the value matches the regular expression, false otherwise.
      */
     validateRegExp(regExp: string, value: string) {
-        let customRegExp = new RegExp(regExp);
-        return customRegExp.test(value);
+        // The 'v' flag is the one used by browsers for the pattern attribute, 'u' and no flag are fallbacks
+        for (const flags of ['v', 'u', '']) {
+            let customRegExp: RegExp;
+            try {
+                customRegExp = new RegExp('^(?:' + regExp + ')$', flags);
+            } catch (e) {
+                continue;
+            }
+            return customRegExp.test(value);
+        }
+        console.warn('Invalid pattern ignored: ' + regExp);
+        return true;
     }
 
     /**
@@ -541,18 +745,18 @@ export default class FormValidator {
      * @return {boolean} - True if the phone number is valid, false otherwise.
      */
     validatePhone(value: string) {
-        const emailRegex = /^[\s]{0,2}[\+]{0,1}[\s0-9]{6,20}[\s]{0,2}$/;
-        return emailRegex.test(value);
+        const phoneRegex = /^[\s]{0,2}[\+]{0,1}[\s0-9]{6,20}[\s]{0,2}$/;
+        return phoneRegex.test(value);
     }
 
     /**
-     * Validates a URL using a regular expression.
+     * Validates a URL using a regular expression (localhost and private network addresses are allowed).
      *
      * @param {string} value The URL string to be validated.
      * @return {boolean} true if the input value is a valid URL, false otherwise.
      */
     validateUrl(value: string) {
-        const urlRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})+(?::(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/;
+        const urlRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})+(?::(?:[^\]\[?\/<~#`!@$^&*()+=}|:";',>{ ]|%[0-9A-Fa-f]{2})*)?@)?(?:(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|localhost|(?:(?:[a-z0-9¡-￿][a-z0-9¡-￿_-]{0,62})?[a-z0-9¡-￿]\.)+(?:[a-z¡-￿]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i;
         return urlRegex.test(value);
     }
 
@@ -563,30 +767,25 @@ export default class FormValidator {
      * @return {boolean} Returns true if the input field contains a valid date format that falls within any specified min/max attributes, otherwise false.
      */
     validateDate(field: HTMLInputElement) {
-        const fieldValue = field.value;
-        let value = Date.parse(fieldValue);
-        if (value) {
-            if (field.hasAttribute('min')) {
-                let attrMin = field.getAttribute('min');
-                if (attrMin && attrMin != '') {
-                    let minValue = Date.parse(attrMin);
-                    if (value < minValue) {
-                        return false;
-                    }
-                }
-            }
-            if (field.hasAttribute('max')) {
-                let attrMax = field.getAttribute('max');
-                if (attrMax && attrMax != '') {
-                    let maxValue = Date.parse(attrMax);
-                    if (value > maxValue) {
-                        return false;
-                    }
-                }
-            }
-            return true;
+        const value = Date.parse(field.value);
+        if (isNaN(value)) {
+            return false;
         }
-        return false;
+        const attrMin = field.getAttribute('min');
+        if (attrMin) {
+            const minValue = Date.parse(attrMin);
+            if (!isNaN(minValue) && value < minValue) {
+                return false;
+            }
+        }
+        const attrMax = field.getAttribute('max');
+        if (attrMax) {
+            const maxValue = Date.parse(attrMax);
+            if (!isNaN(maxValue) && value > maxValue) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -617,51 +816,82 @@ export default class FormValidator {
      * @return {void}
      */
     checkSubmit() {
-        if (this.form) {
-            this.form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                this.submitAction();
-            });
+        this.addListener('submit', event => {
+            event.preventDefault();
+            this.submitAction((<SubmitEvent>event).submitter);
+        });
+    }
+
+    /**
+     * Validate the form (awaiting the asynchronous rules) and submit it if valid.
+     *
+     * @param {HTMLElement | null} [submitter] - The button that triggered the submission, if any.
+     * @return {Promise<void>}
+     */
+    async submitAction(submitter?: HTMLElement | null) {
+        const form = this.form;
+        if (!form) {
+            return;
+        }
+        if (this.settings && this.settings.validFormClass) {
+            form.classList.add(this.settings.validFormClass);
+        }
+        const results = this.getFields().map(field => this.runFieldValidation(field));
+        let isValid = results.every(result => result.valid);
+        if (isValid) {
+            const pending = results
+                .map(result => result.pending)
+                .filter((promise): promise is Promise<boolean> => promise !== undefined);
+            if (pending.length > 0) {
+                isValid = (await Promise.all(pending)).every(valid => valid);
+            }
+        }
+        if (isValid) {
+            if (this.settings && this.settings.submitHandler) {
+                this.settings.submitHandler(form, submitter);
+            } else {
+                this.nativeSubmit(form, submitter);
+            }
+        } else {
+            console.log('Invalid form, please check the errors.');
+            if (this.settings && this.settings.validFormClass) {
+                form.classList.remove(this.settings.validFormClass);
+            }
         }
     }
 
     /**
-     * Submit the form action.
+     * Submit the form natively, sending the name/value of the submitter button
+     * and working even if a field named "submit" shadows HTMLFormElement.submit.
      *
-     * @param {object} $this - The reference to the current object.
+     * @param {HTMLFormElement} form - The form to submit.
+     * @param {HTMLElement | null} [submitter] - The button that triggered the submission, if any.
      * @return {void}
      */
-    submitAction() {
-        if (this.form) {
-            if (this.settings && this.settings.validFormClass) {
-                this.form.classList.add(this.settings.validFormClass)
-            }
-            if (this.validateForm()) {
-                if (this.settings && this.settings.submitHandler) {
-                    this.settings.submitHandler();
-                } else {
-                    this.form.submit();
-                }
-            } else {
-                console.log('Invalid form, please check the errors.');
-                if (this.settings && this.settings.validFormClass) {
-                    this.form.classList.remove(this.settings.validFormClass);
-                }
-            }
+    private nativeSubmit(form: HTMLFormElement, submitter?: HTMLElement | null) {
+        let submitterInput: HTMLInputElement | null = null;
+        const submitterName = submitter ? submitter.getAttribute('name') : null;
+        if (submitter && submitterName) {
+            submitterInput = document.createElement('input');
+            submitterInput.type = 'hidden';
+            submitterInput.name = submitterName;
+            submitterInput.value = (<HTMLButtonElement>submitter).value;
+            Node.prototype.appendChild.call(form, submitterInput);
+        }
+        HTMLFormElement.prototype.submit.call(form);
+        if (submitterInput) {
+            submitterInput.remove();
         }
     }
 
     /**
-     * Resets the form by removing the "was-validated" class and resetting the form fields.
+     * Resets the form: the reset event listener removes the "was-validated" class and hides the error messages.
      *
      * @return {void}
      */
     resetForm() {
         if (this.form) {
-            if (this.settings && this.settings.validFormClass) {
-                this.form.classList.remove(this.settings.validFormClass);
-            }
-            this.form.reset();
+            HTMLFormElement.prototype.reset.call(this.form);
         }
     }
 }

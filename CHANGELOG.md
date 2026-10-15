@@ -1,3 +1,29 @@
+- <a name="2.1.0"></a>
+# 2.1.0 (2026-10-15)
+### Bug fixes
+- Fix crash/duplicated error elements with field names or ids containing CSS special characters (ex. `user[email]`, `user.name`): error elements are now looked up by id inside the form, so two forms with the same field names don't share error messages.
+- The `pattern` attribute must match the whole value, as in HTML (`[0-9]{3}` no longer accepts `abc123xyz`); an invalid pattern is ignored instead of throwing.
+- Native submission works even if a field named `submit` exists and sends the name/value of the submit button.
+- `1970-01-01` is now a valid date.
+- `number`/`range` inputs: `min`/`max` support negative and decimal values and are compared without truncating decimals.
+- `disabled` fields (also inside a disabled `fieldset`) are no longer validated.
+- Fix `min`/`max` default messages.
+- Form reset hides the error messages and removes `errorFieldClass`.
+- Custom rules run on `select` and `file` fields without value (ex. `minlength` on a multiple select with no option selected).
+- Rules with `min`/`max` set to `0` are no longer ignored.
+- When `minlength` fails, a following `maxlength` check no longer resets the validity.
+- Whitespace-only values don't satisfy `required`.
+- URLs with `localhost`, private network addresses and uppercase letters are valid.
+- Messages (settings or `loadMessages`) are merged only for known keys with string values; `loadMessages` handles HTTP errors.
+- Add the missing `phone`, `file`, `regExp` (and `remote` for German) translations to the localization files.
+
+### Features
+- Custom rule `method` can return a `Promise<boolean>`: the error is displayed when resolved and the submission waits for pending checks.
+- The field referenced by `equalTo` re-validates the dependent field when it changes.
+- Delegated listeners on the form: fields added after the initialization are validated; new `destroy()` method.
+- `submitHandler(form, submitter)` receives the form and the submit button; `submitAction` and `loadMessages` return a `Promise`.
+- `messages` setting typed as `Partial<FormMessages>`.
+
 - <a name="2.0.2"></a>
 # 2.0.2 (2025-12-06)
 - Update README: update `fields` to `rules`, change `rules` description to indicate it's an array instead of an object.

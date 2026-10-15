@@ -28,7 +28,7 @@ Use this library to validate a form and display the same style for error message
 - validate fields
 - preconfigured and internationalizable error messages
 - customize the submission form
-- create a custom validations
+- create custom validations
 - tested in Edge, Chrome, Firefox
 
 ### Install
@@ -37,7 +37,7 @@ CDN via jsDelivr
 
     <script src="https://cdn.jsdelivr.net/npm/vanilla-form-validator@latest/dist/vanilla-form-validator.min.js" type="text/javascript"></script>
 
-Download [vanilla-form-validator.js](https://github.com/mitera/vanilla-form-validator/blob/master/vanilla-form-validator.js) and include the script in your HTML file:
+Download [vanilla-form-validator.js](https://github.com/mitera/vanilla-form-validator/blob/main/dist/vanilla-form-validator.js) and include the script in your HTML file:
 
 	<script src="vanilla-form-validator.js" type="text/javascript"></script>
 
@@ -53,9 +53,13 @@ modular code
 
     let commentForm = new FormValidator("#commentForm");
 
+or
+
     let commentForm = new FormValidator(document.getElementById('commentForm'));
 
-	let commentForm = new FormValidator("#commentForm", {
+or with options
+
+    let commentForm = new FormValidator("#commentForm", {
         errorElement: 'label',
         errorClass: 'error',
         ignore: 'input[type="hidden"]'
@@ -76,25 +80,28 @@ The default `options` are:
         errorFieldClass: null,
         validFormClass: 'was-validated',
         submitHandler: null,
-        messages: this.messages
+        messages: null
     }
 
 Where:
 
 - `ignore` is an optional string containing one or more selectors to match fields to ignore. This string must be a valid CSS selector string
-- `fields` is an array of custom fields validation [Custom validations](#Custom-validations)
+- `fields` is an array of custom fields validation [Custom validations](#custom-validations)
 - `errorElement` is an html tag to display error message
 - `errorClass` is a css class for display error message
 - `errorFieldClass` is a css class added when a field is not valid
-- `validFormClass` is a css class added to a form when form is valid
-- `submitHandler` is an method to customize the submission form [Customize the submission form](#Customize-the-submission-form)
-- `messages` preconfigured error messages [Error messages](#Error-messages)
+- `validFormClass` is a css class added to the form on submit, removed if the form is not valid
+- `submitHandler` is a function to customize the submission form [Customize the submission form](#customize-the-submission-form)
+- `messages` preconfigured error messages, only the keys to override are needed [Error messages](#error-messages)
+
+Fields are validated on `focusout`, `keyup` and `change` through listeners on the form, so fields added after the initialization are validated as well; `disabled` fields are skipped.
+Call `destroy()` to remove the listeners.
 
 ### Error messages
 
 Preconfigured values are:
 
-    private messages: FormMessages = {
+    {
         required: 'This field is required.',
         remote: 'Please fix this field.',
         email: 'Please enter a valid email address.',
@@ -107,9 +114,10 @@ Preconfigured values are:
         maxlength: 'Please enter no more than {0} characters.',
         minlength: 'Please enter at least {0} characters.',
         rangelength: 'Please enter a value between {0} and {1} characters long',
-        max: 'Please enter a value than {0}.',
-        min: 'Please enter a value at least {0}.',
-        range: 'Please enter a value between {0} and {1}'
+        max: 'Please enter a value less than or equal to {0}.',
+        min: 'Please enter a value greater than or equal to {0}.',
+        range: 'Please enter a value between {0} and {1}',
+        regExp: 'Please enter a value matching the requested format.'
     }
 
 Override solution:
@@ -135,7 +143,18 @@ Override solution:
     commentForm.loadMessages('localization/messages_es.json');
    ```
    
-    On package are present a preconfigured set of json files
+    The package contains a preconfigured set of json files in `test/localization` (ar, de, es, fr, it, ru); the messages must be wrapped in a `messages` object, missing keys keep the default value:
+
+    ```
+    {
+        "messages": {
+            "required": "Campo obbligatorio",
+            "email": "Inserisci un indirizzo email valido"
+        }
+    }
+    ```
+
+    `loadMessages` returns a `Promise` resolved when the messages are loaded.
 
 3) Set on field the attribute `data-error-message`
 
@@ -163,17 +182,19 @@ suffix (ex: `id="cemail-error"`) and hide `style="display: none;"`
 
 ### Customize the submission form
 
-Create a function on `submitHandler` property
+Create a function on `submitHandler` property, it receives the form and the button that triggered the submission (if any)
 
     let signupForm = new FormValidator("#signupForm", {
-        submitHandler: function () {
+        submitHandler: function (form, submitter) {
             console.log('remote action')
         }
     });
 
+Without `submitHandler` the form is submitted natively, including the name/value of the submit button.
+
 ### Custom validations
 
-on input `text` it's possible to use `pattern` attribute
+on input fields it's possible to use the `pattern` attribute (as in HTML, the expression must match the whole value)
 
 for other fields or cases add an array of fields:
 
@@ -186,15 +207,15 @@ for other fields or cases add an array of fields:
 fields configuration:
 - `name` is the name of the field
 - `rules` is an array of object to configure
-  - `method` available methods are: `equalTo, minlength, maxlength, rangelength` or javascript `function(fieldValue, field)`
-  - `field` is a css rule for find a field, this option is use by `equalTo` method
-  - `min` is min integer value used by `minlength, rangelength`
-  - `max` is max integer value used by `maxlength, rangelength`
+  - `method` available methods are: `equalTo, minlength, maxlength, rangelength` or javascript `function(fieldValue, field)` returning `true` if the value is valid
+  - `field` is a css selector to find a field, this option is used by `equalTo` method
+  - `min` is min integer value used by `minlength, rangelength` (`0` is allowed)
+  - `max` is max integer value used by `maxlength, rangelength` (`0` is allowed)
   - `errorMessage` is an optional error message
 
-Preconfigured validation are: `equalTo, minlength, maxlength, rangelength`
+Preconfigured validations are: `equalTo, minlength, maxlength, rangelength`
 
-These rules: `minlength, maxlength, rangelength` are applicable on input `text,radio,checkbox,file` and select field
+These rules: `minlength, maxlength, rangelength` are applicable on input `text,radio,checkbox,file`, textarea and select fields
 
 Example of preconfigured validation:
 
@@ -254,6 +275,26 @@ Example of custom validation:
         ]
     }
 
+A custom `method` can also return a `Promise<boolean>` (ex. a remote check): the error is displayed when the promise resolves
+(a rejected promise is considered invalid) and the form is submitted only after all the pending checks are resolved.
+Fields are validated on every `keyup` too, so consider caching or debouncing the remote calls.
+
+    {
+        name: 'username',
+        rules: [
+            {
+                errorMessage: 'Username already in use',
+                method: function (fieldValue, field) {
+                    return fetch('/api/username-available?u=' + encodeURIComponent(fieldValue))
+                        .then(response => response.json())
+                        .then(data => data.available);
+                },
+            }
+        ]
+    }
+
+When the field referenced by `equalTo` changes, the dependent field is validated again.
+
 ### Migration from v1 to v2
 
 Refactor the validation logic to use `fields` instead of `rules` in `FormSettings` to improve clarity and hierarchy, add more validations to each fields with their own error message.
@@ -294,11 +335,11 @@ after:
 - `rules -> fieldName` is removed, use `fields -> name` instead
 - `rules -> validation` is removed, use `fields ->  rules` instead
 - `rules -> errorMessage` is removed, use `fields -> rules -> errorMessage` instead
-- `rules -> method: 'custom'` is removed, use `fields -> method: function(fieldValue, field) {}` instead
+- `rules -> method: 'custom'` is removed, use `fields -> rules -> method: function(fieldValue, field) {}` instead
 
 ### Changelog
 
-To see what's new or changed in the latest version, see the [changelog](https://github.com/mitera/valilla-form-validator/blob/main/CHANGELOG.md)
+To see what's new or changed in the latest version, see the [changelog](https://github.com/mitera/vanilla-form-validator/blob/main/CHANGELOG.md)
 
 ### License
 

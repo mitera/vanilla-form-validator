@@ -1,21 +1,29 @@
+import { readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import typescript from 'typescript';
 import rollupTypescript from '@rollup/plugin-typescript';
 
+// Read package metadata so the banner and output paths stay in sync with package.json
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+
+// Derive the public repository URL and the GitHub owner from package.json
+const repoUrl = pkg.homepage.replace(/#.*$/, '');
+const owner = new URL(repoUrl).pathname.split('/')[1];
+
 const license = `/*!
- * @author Simone Miterangelis <simone@mite.it>
- * vanilla-form-validator v2.0.2 by @mitera
- * https://github.com/mitera/vanilla-form-validator
- * Released under the MIT License.
+ * @author ${pkg.author}
+ * ${pkg.name} v${pkg.version} by @${owner}
+ * ${repoUrl}
+ * Released under the ${pkg.license} License.
  */`;
 
 export default {
-    input: './src/vanilla-form-validator.ts',
+    input: `./src/${pkg.name}.ts`,
     output: [
         {
-            dir: 'dist',
+            dir: dirname(pkg.main),
             format: 'umd',
             name: 'FormValidator',
-            //file: pkg.main,
             banner: license,
             indent: '\t',
         }
