@@ -1,8 +1,9 @@
 import { FormSettings } from "./types";
 export default class FormValidator {
     private form?;
-    private fields?;
     private settings?;
+    private listeners;
+    private pendingValidations;
     private messages;
     /**
      * Creates an instance of the form handler with the specified settings and binds it to a form element.
@@ -17,24 +18,51 @@ export default class FormValidator {
      *
      * @param {string} jsonFile - The path of the JSON file containing the messages.
      *
+     * @return {Promise<void>} Resolves once the messages have been loaded (errors are logged, not rethrown).
+     */
+    loadMessages(jsonFile: string): Promise<void>;
+    /**
+     * Copy the known messages from the given source, ignoring unknown keys and non-string values.
+     *
+     * @param {Partial<FormMessages>} source - The messages to merge into the current ones.
      * @return {void}
      */
-    loadMessages(jsonFile: string): void;
+    private mergeMessages;
     /**
-     * Initialize the form validation by setting up event listeners on form fields for blur, keyup, change events.
+     * Initialize the form validation by setting up delegated event listeners (focusout, keyup, change) on the form,
+     * so that fields added after the initialization are validated as well.
      * Also adds a listener for form reset event.
      *
      * @return {void}
      */
     private init;
     /**
-     * Merge two objects
+     * Register an event listener on the form and keep track of it so that it can be removed by destroy().
      *
-     * @param {FormMessages} o1 Object 1
-     * @param {FormMessages} o2 Object 2
-     * @return {FormMessages}
+     * @param {string} type - The event type.
+     * @param {EventListener} listener - The listener to register.
+     * @return {void}
      */
-    merge(o1: any, o2: any): any;
+    private addListener;
+    /**
+     * Remove all the event listeners registered by the validator.
+     *
+     * @return {void}
+     */
+    destroy(): void;
+    /**
+     * Return the fields to validate, excluding the ones matching the `ignore` setting.
+     *
+     * @return {HTMLInputElement[]} The fields of the form to validate.
+     */
+    private getFields;
+    /**
+     * Check whether the given element is a field of the form that has to be validated.
+     *
+     * @param {Element} element - The element to check.
+     * @return {boolean} True if the element must be validated.
+     */
+    private isValidatable;
     /**
      * Handles the field validation event triggered by a user action.
      *
@@ -43,12 +71,111 @@ export default class FormValidator {
      */
     fieldValidationEvent(e: Event): void;
     /**
+     * Re-validate the non-empty fields having an `equalTo` rule that points to the changed field.
+     *
+     * @param {Element} changedField - The field that has just been changed.
+     * @return {void}
+     */
+    private revalidateDependents;
+    /**
      * Validates a field based on its type and any additional rules provided.
+     * Asynchronous rules (functions returning a Promise) don't affect the returned value:
+     * their error is displayed once they resolve, and they are awaited before submitting the form.
      *
      * @param {HTMLInputElement} field - The input field to be validated.
      * @return {boolean} Returns true if the field is valid, false if it is not.
      */
     validateField(field: HTMLInputElement): boolean;
+    /**
+     * Validates a field and displays its error, returning the synchronous result and the pending asynchronous one.
+     *
+     * @param {HTMLInputElement} field - The input field to be validated.
+     * @return {FieldValidationResult} The validation result.
+     */
+    private runFieldValidation;
+    /**
+     * Return the first validation error of the field, or null if the field is valid.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @param {Promise<string | null>[]} asyncChecks - Collects the asynchronous rules to evaluate.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getFieldError;
+    /**
+     * Return the error related to the type and to the HTML attributes of a field with a value.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getTypeError;
+    /**
+     * Validate the value of a numeric field against its `min` and `max` attributes (negative and decimal values allowed).
+     *
+     * @param {HTMLInputElement} field - The numeric field.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getNumberRangeError;
+    /**
+     * Read a numeric attribute of a field.
+     *
+     * @param {HTMLInputElement} field - The field.
+     * @param {string} name - The attribute name.
+     * @return {number | null} The attribute value, or null if missing or not a number.
+     */
+    private getNumberAttribute;
+    /**
+     * Validate the length of a field against its `minlength`/`min` and `maxlength`/`max` attributes.
+     *
+     * @param {HTMLInputElement} field - The field.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getLengthError;
+    /**
+     * Return the first error of the custom rules configured for the field in the `fields` setting.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @param {Promise<string | null>[]} asyncChecks - Collects the asynchronous rules to evaluate.
+     * @return {string | null} The error message, or null if the field is valid.
+     */
+    private getRulesError;
+    /**
+     * Evaluate a single custom rule.
+     *
+     * @param {HTMLInputElement} field - The field to validate.
+     * @param {FormRuleValidation} rule - The rule to evaluate.
+     * @param {Promise<string | null>[]} asyncChecks - Collects the rule if it is asynchronous.
+     * @return {string | null} The error message, or null if the rule is satisfied (or asynchronous).
+     */
+    private getRuleError;
+    /**
+     * Replace the `{0}`, `{1}`... placeholders of a message with the given parameters.
+     *
+     * @param {string} message - The message.
+     * @param {Array<string | number>} params - The values of the placeholders.
+     * @return {string} The formatted message.
+     */
+    private formatMessage;
+    /**
+     * Find the error element of a field: first inside the form, then in the document if it doesn't belong to another form.
+     *
+     * @param {string} errorHelpId - The id of the error element.
+     * @return {HTMLElement | null} The error element, or null if not found.
+     */
+    private findErrorElement;
+    /**
+     * Show or hide the error message of a field and toggle the `errorFieldClass`.
+     *
+     * @param {HTMLInputElement} field - The field.
+     * @param {string | null} errorMessage - The error message, or null if the field is valid.
+     * @return {void}
+     */
+    private displayFieldError;
+    /**
+     * Hide all the error messages, remove the error classes and discard the pending asynchronous validations.
+     *
+     * @return {void}
+     */
+    private clearValidation;
     /**
      * Escapes characters with special meaning in CSS for a given string
      *
@@ -111,6 +238,7 @@ export default class FormValidator {
     rangelength(value: string, element: HTMLInputElement, param: number[]): boolean;
     /**
      * Validates the form fields and returns true if all fields are valid.
+     * Asynchronous rules are not awaited: use submitAction() to take them into account.
      *
      * @return {boolean} True if all form fields are valid, otherwise false.
      */
@@ -123,7 +251,7 @@ export default class FormValidator {
      */
     validateCheckboxRadio(name: string): boolean;
     /**
-     * Validates if the given text is not empty.
+     * Validates if the given text is not empty (whitespace only is considered empty).
      *
      * @param {string} value - The text to be validated.
      * @return {boolean} - True if the text is not empty, false otherwise.
@@ -131,6 +259,7 @@ export default class FormValidator {
     validateText(value: string): boolean;
     /**
      * Validate the given regular expression against the specified value.
+     * As for the HTML `pattern` attribute, the expression must match the whole value; an invalid expression is ignored.
      *
      * @param {string} regExp - The regular expression to validate against.
      * @param {string} value - The value to validate.
@@ -153,7 +282,7 @@ export default class FormValidator {
      */
     validatePhone(value: string): boolean;
     /**
-     * Validates a URL using a regular expression.
+     * Validates a URL using a regular expression (localhost and private network addresses are allowed).
      *
      * @param {string} value The URL string to be validated.
      * @return {boolean} true if the input value is a valid URL, false otherwise.
@@ -187,14 +316,23 @@ export default class FormValidator {
      */
     checkSubmit(): void;
     /**
-     * Submit the form action.
+     * Validate the form (awaiting the asynchronous rules) and submit it if valid.
      *
-     * @param {object} $this - The reference to the current object.
+     * @param {HTMLElement | null} [submitter] - The button that triggered the submission, if any.
+     * @return {Promise<void>}
+     */
+    submitAction(submitter?: HTMLElement | null): Promise<void>;
+    /**
+     * Submit the form natively, sending the name/value of the submitter button
+     * and working even if a field named "submit" shadows HTMLFormElement.submit.
+     *
+     * @param {HTMLFormElement} form - The form to submit.
+     * @param {HTMLElement | null} [submitter] - The button that triggered the submission, if any.
      * @return {void}
      */
-    submitAction(): void;
+    private nativeSubmit;
     /**
-     * Resets the form by removing the "was-validated" class and resetting the form fields.
+     * Resets the form: the reset event listener removes the "was-validated" class and hides the error messages.
      *
      * @return {void}
      */

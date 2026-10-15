@@ -32,8 +32,8 @@ interface FormSettings {
     errorClass?: string | null;
     errorFieldClass?: string | null;
     validFormClass?: string | null;
-    submitHandler?: any | null;
-    messages?: FormMessages;
+    submitHandler?: ((form: HTMLFormElement, submitter?: HTMLElement | null) => void) | null;
+    messages?: Partial<FormMessages>;
 }
 
 interface FormField {

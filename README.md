@@ -76,7 +76,7 @@ The default `options` are:
         errorFieldClass: null,
         validFormClass: 'was-validated',
         submitHandler: null,
-        messages: this.messages
+        messages: null
     }
 
 Where:
@@ -88,7 +88,10 @@ Where:
 - `errorFieldClass` is a css class added when a field is not valid
 - `validFormClass` is a css class added to a form when form is valid
 - `submitHandler` is an method to customize the submission form [Customize the submission form](#Customize-the-submission-form)
-- `messages` preconfigured error messages [Error messages](#Error-messages)
+- `messages` preconfigured error messages, only the keys to override are needed [Error messages](#Error-messages)
+
+Fields are validated on `focusout`, `keyup` and `change` through listeners on the form, so fields added after the initialization are validated as well; `disabled` fields are skipped.
+Call `destroy()` to remove the listeners.
 
 ### Error messages
 
@@ -107,9 +110,10 @@ Preconfigured values are:
         maxlength: 'Please enter no more than {0} characters.',
         minlength: 'Please enter at least {0} characters.',
         rangelength: 'Please enter a value between {0} and {1} characters long',
-        max: 'Please enter a value than {0}.',
-        min: 'Please enter a value at least {0}.',
-        range: 'Please enter a value between {0} and {1}'
+        max: 'Please enter a value less than or equal to {0}.',
+        min: 'Please enter a value greater than or equal to {0}.',
+        range: 'Please enter a value between {0} and {1}',
+        regExp: 'Please enter a value matching the requested format.'
     }
 
 Override solution:
@@ -135,7 +139,7 @@ Override solution:
     commentForm.loadMessages('localization/messages_es.json');
    ```
    
-    On package are present a preconfigured set of json files
+    On package are present a preconfigured set of json files. `loadMessages` returns a `Promise` resolved when the messages are loaded.
 
 3) Set on field the attribute `data-error-message`
 
@@ -163,17 +167,19 @@ suffix (ex: `id="cemail-error"`) and hide `style="display: none;"`
 
 ### Customize the submission form
 
-Create a function on `submitHandler` property
+Create a function on `submitHandler` property, it receives the form and the button that triggered the submission (if any)
 
     let signupForm = new FormValidator("#signupForm", {
-        submitHandler: function () {
+        submitHandler: function (form, submitter) {
             console.log('remote action')
         }
     });
 
+Without `submitHandler` the form is submitted natively, including the name/value of the submit button.
+
 ### Custom validations
 
-on input `text` it's possible to use `pattern` attribute
+on input `text` it's possible to use `pattern` attribute (as in HTML, the expression must match the whole value)
 
 for other fields or cases add an array of fields:
 
@@ -188,8 +194,8 @@ fields configuration:
 - `rules` is an array of object to configure
   - `method` available methods are: `equalTo, minlength, maxlength, rangelength` or javascript `function(fieldValue, field)`
   - `field` is a css rule for find a field, this option is use by `equalTo` method
-  - `min` is min integer value used by `minlength, rangelength`
-  - `max` is max integer value used by `maxlength, rangelength`
+  - `min` is min integer value used by `minlength, rangelength` (`0` is allowed)
+  - `max` is max integer value used by `maxlength, rangelength` (`0` is allowed)
   - `errorMessage` is an optional error message
 
 Preconfigured validation are: `equalTo, minlength, maxlength, rangelength`
@@ -253,6 +259,25 @@ Example of custom validation:
             }
         ]
     }
+
+A custom `method` can also return a `Promise<boolean>` (ex. a remote check): the error is displayed when the promise resolves
+(a rejected promise is considered invalid) and the form is submitted only after all the pending checks are resolved.
+
+    {
+        name: 'username',
+        rules: [
+            {
+                errorMessage: 'Username already in use',
+                method: function (fieldValue, field) {
+                    return fetch('/api/username-available?u=' + encodeURIComponent(fieldValue))
+                        .then(response => response.json())
+                        .then(data => data.available);
+                },
+            }
+        ]
+    }
+
+When the field referenced by `equalTo` changes, the dependent field is validated again.
 
 ### Migration from v1 to v2
 
